@@ -4,7 +4,9 @@ import (
 	"bytes"
 	// "errors"
 	"fmt"
+	"github.com/rthornton128/goncurses"
 	"math/rand"
+	"time"
 )
 
 const (
@@ -13,8 +15,17 @@ const (
 	NumberPossiblePieces = 7
 )
 
+type gamestate int
+
+const (
+	StateInitializing = iota
+	StateRunning
+	StateGameOver
+)
+
 type Game struct {
 	Seed            int64
+	State           gamestate
 	PRNG            *rand.Rand
 	Piece           int
 	PieceRotation   int
@@ -217,9 +228,10 @@ var PieceMap = [7][4][4][4]int{
 	},
 }
 
-func NewGame() *Game {
+func NewGame(player_input <-chan goncurses.Key, game_state chan<- Game) *Game {
 	g := Game{
 		Seed:          0,
+		State:         StateInitializing,
 		Piece:         1,
 		PieceRotation: 0,
 		PiecePosCol:   4,
@@ -240,6 +252,9 @@ func NewGame() *Game {
 			g.Field[i][j] = 0
 		}
 	}
+
+	// GOAL: Start the main game loop
+	g.MainGameLoop(player_input, game_state)
 
 	return &g
 }
@@ -396,4 +411,58 @@ func (g *Game) ShiftRowsDown(start_row int) {
 			g.Field[i][j] = g.Field[i-1][j]
 		}
 	}
+}
+
+func (g *Game) MainGameLoop(player_input <-chan goncurses.Key, game_state chan<- Game) {
+	// This function provides the main game loop logic.
+	// It reads player input from channel player_input.
+	// It sends game state to channel game_state.
+
+	// GOAL: Create a channel for a ticker to drop the pieces
+	ticker := time.NewTicker(time.Millisecond * 500) // FIXME: use a global/config for drop speed
+
+	var key goncurses.Key
+	go func() {
+
+		quit := false
+		g.State = StateRunning
+
+		for !quit {
+
+			select {
+			case key = <-player_input:
+				switch key {
+				case 'q':
+					quit = true
+				case 'h':
+					g.MoveLeft()
+				case 'l':
+					g.MoveRight()
+				case 'r':
+					g.Rotate()
+				case 'd':
+					//FIXME: drop
+				}
+
+			case <-ticker.C:
+				// Lower the piece and check if it collides.
+				able_to_lower := g.LowerPiece()
+				if !able_to_lower {
+					g.PlacePiece()
+					g.ClearCompletedRows()
+					g.ScorePieceCount++
+
+					if 1 == g.PiecePosRow {
+						// CLAIM: game over
+						quit = true
+					}
+					g.NextPiece()
+				}
+			}
+			game_state <- *g
+		}
+
+		g.State = StateGameOver
+		game_state <- *g
+	}()
 }
