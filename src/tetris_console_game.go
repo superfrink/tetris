@@ -49,11 +49,8 @@ func main() {
 	}()
 	var key goncurses.Key
 
-	game_user_input_ch := make(chan byte)
-	game_output_channel := make(chan engine.Game)
-
 	// GOAL: Create an instance of the game
-	g := engine.NewGame(game_user_input_ch, game_output_channel)
+	g, game_user_input_ch, game_output_channel := engine.NewGame()
 
 	// Main game loop
 	quit := false

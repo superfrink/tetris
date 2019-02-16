@@ -227,7 +227,7 @@ var PieceMap = [7][4][4][4]int{
 	},
 }
 
-func NewGame(player_input <-chan byte, game_state chan<- Game) *Game {
+func NewGame() (*Game, chan<- byte, <-chan Game) {
 	g := Game{
 		Seed:          0,
 		State:         StateInitializing,
@@ -252,10 +252,13 @@ func NewGame(player_input <-chan byte, game_state chan<- Game) *Game {
 		}
 	}
 
-	// GOAL: Start the main game loop
-	g.MainGameLoop(player_input, game_state)
+	player_input_channel := make(chan byte)
+	output_state_channel := make(chan Game)
 
-	return &g
+	// GOAL: Start the main game loop
+	g.MainGameLoop(player_input_channel, output_state_channel)
+
+	return &g, player_input_channel, output_state_channel
 }
 
 func (g *Game) GetDebugState() string {
