@@ -4,7 +4,6 @@ import (
 	"bytes"
 	// "errors"
 	"fmt"
-	"github.com/rthornton128/goncurses"
 	"math/rand"
 	"time"
 )
@@ -228,7 +227,7 @@ var PieceMap = [7][4][4][4]int{
 	},
 }
 
-func NewGame(player_input <-chan goncurses.Key, game_state chan<- Game) *Game {
+func NewGame(player_input <-chan byte, game_state chan<- Game) *Game {
 	g := Game{
 		Seed:          0,
 		State:         StateInitializing,
@@ -413,7 +412,7 @@ func (g *Game) ShiftRowsDown(start_row int) {
 	}
 }
 
-func (g *Game) MainGameLoop(player_input <-chan goncurses.Key, game_state chan<- Game) {
+func (g *Game) MainGameLoop(player_input <-chan byte, game_state chan<- Game) {
 	// This function provides the main game loop logic.
 	// It reads player input from channel player_input.
 	// It sends game state to channel game_state.
@@ -421,7 +420,7 @@ func (g *Game) MainGameLoop(player_input <-chan goncurses.Key, game_state chan<-
 	// GOAL: Create a channel for a ticker to drop the pieces
 	ticker := time.NewTicker(time.Millisecond * 500) // FIXME: use a global/config for drop speed
 
-	var key goncurses.Key
+	var key byte
 	go func() {
 
 		quit := false

@@ -49,7 +49,7 @@ func main() {
 	}()
 	var key goncurses.Key
 
-	game_user_input_ch := make(chan goncurses.Key)
+	game_user_input_ch := make(chan byte)
 	game_output_channel := make(chan engine.Game)
 
 	// GOAL: Create an instance of the game
@@ -60,7 +60,7 @@ func main() {
 	for !quit {
 		select {
 		case key = <-local_user_input_ch:
-			game_user_input_ch <- key
+			game_user_input_ch <- byte(key)
 
 		case _ = <-game_output_channel:
 
