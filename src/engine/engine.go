@@ -16,10 +16,20 @@ const (
 
 // DOC: Possible states a game can be in
 type gamestate int
+
 const (
 	StateInitializing = iota
 	StateRunning
 	StateGameOver
+)
+
+// DOC: Player input commands available
+const (
+	PlayInputQuit = iota
+	PlayInputMoveLeft
+	PlayInputMoveRight
+	PlayInputRotate
+	PlayInputDrop
 )
 
 // DOC: Data structure describing a game
@@ -460,15 +470,15 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state chan<- Game) {
 			select {
 			case key = <-player_input:
 				switch key {
-				case 'q':
+				case PlayInputQuit:
 					quit = true
-				case 'h':
+				case PlayInputMoveLeft:
 					g.moveLeft()
-				case 'l':
+				case PlayInputMoveRight:
 					g.moveRight()
-				case 'r':
+				case PlayInputRotate:
 					g.rotate()
-				case 'd':
+				case PlayInputDrop:
 					//FIXME: drop
 				}
 

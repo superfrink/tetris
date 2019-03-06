@@ -50,7 +50,17 @@ mainloop:
 				goncurses.Echo(true)
 				break mainloop
 			}
-			game_user_input_ch <- byte(key)
+
+			switch key {
+			case 'q':
+				game_user_input_ch <- engine.PlayInputQuit
+			case 'h':
+				game_user_input_ch <- engine.PlayInputMoveLeft
+			case 'l':
+				game_user_input_ch <- engine.PlayInputMoveRight
+			case 'r':
+				game_user_input_ch <- engine.PlayInputRotate
+			}
 
 		case _ = <-game_output_channel:
 
