@@ -2,26 +2,27 @@ package engine
 
 import (
 	"bytes"
-	// "errors"
 	"fmt"
 	"math/rand"
 	"time"
 )
 
+// DOC: Constants used in the game engine
 const (
 	GameRows             = 18
 	GameColumns          = 10
 	NumberPossiblePieces = 7
 )
 
+// DOC: Possible states a game can be in
 type gamestate int
-
 const (
 	StateInitializing = iota
 	StateRunning
 	StateGameOver
 )
 
+// DOC: Data structure describing a game
 type Game struct {
 	Seed            int64
 	State           gamestate
@@ -35,6 +36,7 @@ type Game struct {
 	ScoreLineCount  int
 }
 
+// DOC: Mapping from piece and rotation to blocks covered
 var PieceMap = [7][4][4][4]int{
 	{
 		// I piece
@@ -227,6 +229,11 @@ var PieceMap = [7][4][4][4]int{
 	},
 }
 
+// NewGame creates a new instance of a tetris game.
+// Returns:
+// - A game struct for the new game
+// - The input channel that player moves will be read from
+// - An output channel that will be sent each state change
 func NewGame() (*Game, chan<- byte, <-chan Game) {
 	g := Game{
 		Seed:          0,
@@ -309,7 +316,12 @@ func (g *Game) GetDebugState() string {
 	return buffer.String()
 }
 
-func PieceCollision(field [GameRows + 2][GameColumns + 2]int, piece int, rotation int, row int, col int) bool {
+// pieceCollision determines whether a specified piece in the specified position and
+// rotation would collide with any existing blocks on the specfied field.
+// Returns:
+// - true if there is a collision
+// - false otherwise
+func pieceCollision(field [GameRows + 2][GameColumns + 2]int, piece int, rotation int, row int, col int) bool {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			if 0 != PieceMap[piece][rotation][i][j] {
@@ -324,32 +336,39 @@ func PieceCollision(field [GameRows + 2][GameColumns + 2]int, piece int, rotatio
 	return false
 }
 
-func (g *Game) Rotate() {
+// rotate changes the rotation of the piece only if the rotation would not collide.
+func (g *Game) rotate() {
 
-	if !PieceCollision(g.Field, g.Piece, (g.PieceRotation+1)%4, g.PiecePosRow, g.PiecePosCol) {
+	if !pieceCollision(g.Field, g.Piece, (g.PieceRotation+1)%4, g.PiecePosRow, g.PiecePosCol) {
 		g.PieceRotation = (g.PieceRotation + 1) % 4
 	}
 }
 
-func (g *Game) MoveLeft() {
-	if !PieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol-1) {
+// moveLeft move the position to the left only if the move would not collide.
+func (g *Game) moveLeft() {
+	if !pieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol-1) {
 		g.PiecePosCol--
 	}
 }
 
-func (g *Game) MoveRight() {
-	if !PieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol+1) {
+// moveRight move the position to the right only if the move would not collide.
+func (g *Game) moveRight() {
+	if !pieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol+1) {
 		g.PiecePosCol++
 	}
 }
 
-func (g *Game) LowerPiece() bool {
+// lowerPiece lowers the position by one step only if the move would not collide.
+// Returns:
+// - false if a collision would occur.
+// - true otherwise
+func (g *Game) lowerPiece() bool {
 	// Returns false if unable to lower peice because of collision.
 	// Returns true otherwise.
 
 	// GOAL: lower the piece one step
 
-	if PieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow+1, g.PiecePosCol) {
+	if pieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow+1, g.PiecePosCol) {
 		// CLAIM: Piece will collides if lowered.
 		return false
 	}
@@ -358,7 +377,8 @@ func (g *Game) LowerPiece() bool {
 	return true
 }
 
-func (g *Game) PlacePiece() {
+// placePiece updates the field to place each block from the piece onto the play field.
+func (g *Game) placePiece() {
 
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -369,7 +389,9 @@ func (g *Game) PlacePiece() {
 	}
 }
 
-func (g *Game) NextPiece() error {
+// nextPiece updates the game state to have a new piece in play at the top of the field.
+// FIXME: when would this return an error?
+func (g *Game) nextPiece() error {
 	// GOAL: pick a new random piece
 
 	x := g.PRNG.Intn(NumberPossiblePieces)
@@ -383,7 +405,9 @@ func (g *Game) NextPiece() error {
 	return nil
 }
 
-func (g *Game) ClearCompletedRows() {
+// clearCompletedRows finds completed rows in the field, removes them, and drops
+// above rows down.
+func (g *Game) clearCompletedRows() {
 
 	for i := 1; i < GameRows+1; i++ {
 
@@ -405,6 +429,8 @@ func (g *Game) ClearCompletedRows() {
 	}
 }
 
+// ShiftRowsDown drops blocks down by one row, starting at the start_row.
+// Called by clearCompletedRows().
 func (g *Game) ShiftRowsDown(start_row int) {
 	// Shifts down all rows above the start_row.
 
@@ -415,10 +441,10 @@ func (g *Game) ShiftRowsDown(start_row int) {
 	}
 }
 
+// MainGameLoop provides the main game loop logic.
+// Reads player input from channel player_input.
+// Sends game state to channel game_state.
 func (g *Game) MainGameLoop(player_input <-chan byte, game_state chan<- Game) {
-	// This function provides the main game loop logic.
-	// It reads player input from channel player_input.
-	// It sends game state to channel game_state.
 
 	// GOAL: Create a channel for a ticker to drop the pieces
 	ticker := time.NewTicker(time.Millisecond * 500) // FIXME: use a global/config for drop speed
@@ -437,28 +463,28 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state chan<- Game) {
 				case 'q':
 					quit = true
 				case 'h':
-					g.MoveLeft()
+					g.moveLeft()
 				case 'l':
-					g.MoveRight()
+					g.moveRight()
 				case 'r':
-					g.Rotate()
+					g.rotate()
 				case 'd':
 					//FIXME: drop
 				}
 
 			case <-ticker.C:
 				// Lower the piece and check if it collides.
-				able_to_lower := g.LowerPiece()
+				able_to_lower := g.lowerPiece()
 				if !able_to_lower {
-					g.PlacePiece()
-					g.ClearCompletedRows()
+					g.placePiece()
+					g.clearCompletedRows()
 					g.ScorePieceCount++
 
 					if 1 == g.PiecePosRow {
 						// CLAIM: game over
 						quit = true
 					}
-					g.NextPiece()
+					g.nextPiece()
 				}
 			}
 			game_state <- *g
