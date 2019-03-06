@@ -17,4 +17,4 @@ Screenshot:
 
 Video of game play (on the left, the game on the right is showing PRNG input.)
 
-![YouTube video of game play](https://youtu.be/E1sI_jp-vLU)
+[Video of game play](https://youtu.be/E1sI_jp-vLU "Video of game play")
