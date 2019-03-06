@@ -41,9 +41,15 @@ func main() {
 
 	// Main game loop
 	quit := false
-	for !quit {
+mainloop:
+	for {
 		select {
+
 		case key = <-local_user_input_ch:
+			if quit {
+				goncurses.Echo(true)
+				break mainloop
+			}
 			game_user_input_ch <- byte(key)
 
 		case _ = <-game_output_channel:
@@ -87,10 +93,9 @@ func main() {
 
 		// GOAL: Check if the game is over
 		if engine.StateGameOver == g.State {
+			stdscr.MovePrint(12, 20, "GAME OVER")
+			stdscr.MovePrint(13, 17, "press any key")
 			quit = true
 		}
 	}
-	stdscr.MovePrint(12, 20, "GAME OVER")
-	stdscr.MovePrint(13, 17, "press any key")
-	stdscr.GetChar()
 }
