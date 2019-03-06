@@ -2,20 +2,10 @@ package main
 
 import (
 	"./engine"
-	"encoding/json"
 	"fmt"
 	"github.com/rthornton128/goncurses"
 	"log"
 )
-
-func PrettyPrint(v interface{}) (err error) {
-	// from https://siongui.github.io/2016/01/30/go-pretty-print-variable/
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err == nil {
-		fmt.Println(string(b))
-	}
-	return
-}
 
 func main() {
 
@@ -33,9 +23,6 @@ func main() {
 	// GOAL: Setup the keystroke legend
 	// FIXME: It would be good to use variables for each key
 	stdscr.MovePrint(21, 0, "q = quit\tr = rotate\th = left\tl = right")
-
-	// GOAL: Setup the output screen : game score
-	// FIXME: incomplete
 
 	stdscr.Refresh()
 
