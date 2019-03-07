@@ -15,6 +15,4 @@ Screenshot:
 
 ![Console Game Screenshot](https://raw.githubusercontent.com/superfrink/tetris/master/doc/tetris-screenshot.png)
 
-Video of game play (on the left, the game on the right is showing PRNG input.)
-
-[Video of game play](https://youtu.be/E1sI_jp-vLU "Video of game play")
+[Video of game play](https://youtu.be/E1sI_jp-vLU "Video of game play") (A human is playing on the left, the right is showing a game with PRNG input.)
