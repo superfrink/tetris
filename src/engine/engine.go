@@ -245,8 +245,22 @@ var PieceMap = [7][4][4][4]int{
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
 func NewGame() (*Game, chan<- byte, <-chan Game) {
-	g := Game{
-		Seed:          0,
+
+	seed := time.Now().UTC().UnixNano()
+
+	return NewSeededGame(seed);
+}
+
+// NewSeededGame creates a new instance of a game using the the PRNG seed.
+// Inputs:
+// - a seed to be used for the generation of pieces to be played
+// Returns:
+// - A game struct for the new game
+// - The input channel that player moves will be read from
+// - An output channel that will be sent each state change
+func NewSeededGame(seed int64) (*Game, chan<- byte, <-chan Game) {
+g := Game{
+		Seed:          seed,
 		State:         StateInitializing,
 		Piece:         1,
 		PieceRotation: 0,
@@ -256,6 +270,7 @@ func NewGame() (*Game, chan<- byte, <-chan Game) {
 
 	source := rand.NewSource(g.Seed)
 	g.PRNG = rand.New(source)
+	g.nextPiece()
 
 	for j := 0; j < GameColumns+2; j++ {
 		g.Field[0][j] = 1
