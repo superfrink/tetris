@@ -3,38 +3,47 @@ package main
 import (
 	"./engine"
 	"fmt"
-	"github.com/rthornton128/goncurses"
+	"github.com/nsf/termbox-go"
 	"log"
 )
 
+// tbprint is based on from https://github.com/jjinux/gotetris/
+func tbprint(y int, x int, str string) {
+	for _, c := range str {
+		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorBlack)
+		x++
+	}
+}
+
 func main() {
 
-	// GOAL: Setup the ncurses screen
-	stdscr, err := goncurses.Init()
+	// GOAL: Setup the screen
+	err := termbox.Init()
 	if err != nil {
 		log.Fatal("init", err)
 	}
-	defer goncurses.End()
+	defer termbox.Close()
 
-	goncurses.Echo(false)
-	goncurses.CBreak(true)
-	goncurses.Cursor(0)
+	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
 
 	// GOAL: Setup the keystroke legend
 	// FIXME: It would be good to use variables for each key
-	stdscr.MovePrint(21, 0, "q = quit\tr = rotate\th = left\tl = right")
+	tbprint(21, 0, "q = quit\tr = rotate\th = left\tl = right")
 
-	stdscr.Refresh()
+	termbox.Flush()
 
 	// GOAL: Create a channel for user input
-	local_user_input_ch := make(chan goncurses.Key)
+	local_user_input_ch := make(chan rune)
 
 	go func() {
 		for {
-			local_user_input_ch <- stdscr.GetChar()
+			event := termbox.PollEvent()
+			if termbox.EventKey == event.Type {
+				local_user_input_ch <- event.Ch
+			}
 		}
 	}()
-	var key goncurses.Key
+	var key rune
 
 	// GOAL: Create an instance of the game
 	g, game_user_input_ch, game_output_channel := engine.NewGame()
@@ -47,7 +56,6 @@ mainloop:
 
 		case key = <-local_user_input_ch:
 			if quit {
-				goncurses.Echo(true)
 				break mainloop
 			}
 
@@ -68,9 +76,9 @@ mainloop:
 			for i := 0; i < engine.GameRows+2; i++ {
 				for j := 0; j < engine.GameColumns+2; j++ {
 					if 0 != g.Field[i][j] {
-						stdscr.MovePrint(i, j, "X")
+						tbprint(i, j, "X")
 					} else {
-						stdscr.MovePrint(i, j, " ")
+						tbprint(i, j, " ")
 					}
 				}
 			}
@@ -79,32 +87,32 @@ mainloop:
 			for i := 0; i < 4; i++ {
 				for j := 0; j < 4; j++ {
 					if 0 != engine.PieceMap[g.Piece][g.PieceRotation][i][j] {
-						stdscr.MovePrint(g.PiecePosRow+i, g.PiecePosCol+j, "*")
+						tbprint(g.PiecePosRow+i, g.PiecePosCol+j, "*")
 					}
 				}
 			}
 
 			// GOAL: Draw the score
-			stdscr.MovePrint(2, 15, fmt.Sprintf("Pieces: %d", g.ScorePieceCount))
-			stdscr.MovePrint(3, 15, fmt.Sprintf("Lines:  %d", g.ScoreLineCount))
+			tbprint(2, 15, fmt.Sprintf("Pieces: %d", g.ScorePieceCount))
+			tbprint(3, 15, fmt.Sprintf("Lines:  %d", g.ScoreLineCount))
 
 			if true {
 				// FIXME: only show when debugging
-				stdscr.MovePrint(7, 15, fmt.Sprintf("Piece    : %2d", g.Piece))
-				stdscr.MovePrint(8, 15, fmt.Sprintf("Rotation : %2d", g.PieceRotation))
-				stdscr.MovePrint(9, 15, fmt.Sprintf("Piece row: %2d", g.PiecePosRow))
-				stdscr.MovePrint(10, 15, fmt.Sprintf("Piece col: %2d", g.PiecePosCol))
+				tbprint(7, 15, fmt.Sprintf("Piece    : %2d", g.Piece))
+				tbprint(8, 15, fmt.Sprintf("Rotation : %2d", g.PieceRotation))
+				tbprint(9, 15, fmt.Sprintf("Piece row: %2d", g.PiecePosRow))
+				tbprint(10, 15, fmt.Sprintf("Piece col: %2d", g.PiecePosCol))
 			}
 
 		}
 
 		// GOAL: Update the screen
-		stdscr.Refresh()
+		termbox.Flush()
 
 		// GOAL: Check if the game is over
 		if engine.StateGameOver == g.State {
-			stdscr.MovePrint(12, 20, "GAME OVER")
-			stdscr.MovePrint(13, 17, "press any key")
+			tbprint(12, 20, "GAME OVER")
+			tbprint(13, 17, "press any key")
 			quit = true
 		}
 	}
