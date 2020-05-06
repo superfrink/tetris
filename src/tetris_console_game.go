@@ -2,6 +2,7 @@ package main
 
 import (
 	"./engine"
+	"flag"
 	"fmt"
 	"github.com/nsf/termbox-go"
 	"log"
@@ -16,6 +17,9 @@ func tbprint(y int, x int, str string) {
 }
 
 func main() {
+
+	var flag_bucketgame = flag.Bool("b", false, "Play a bucket game instead.")
+	flag.Parse()
 
 	// GOAL: Setup the screen
 	err := termbox.Init()
@@ -46,7 +50,15 @@ func main() {
 	var key rune
 
 	// GOAL: Create an instance of the game
-	g, game_user_input_ch, game_output_channel := engine.NewGame()
+	var g *engine.Game
+	var game_user_input_ch chan<- byte
+	var game_output_channel <-chan engine.Game
+
+	if *flag_bucketgame {
+		g, game_user_input_ch, game_output_channel = engine.NewBucketGame()
+	} else {
+		g, game_user_input_ch, game_output_channel = engine.NewGame()
+	}
 
 	// Main game loop
 	quit := false
