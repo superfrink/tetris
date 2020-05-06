@@ -12,6 +12,10 @@ const (
 	DefaultGameRows             = 18
 	DefaultGameColumns          = 10
 	DefaultNumberPossiblePieces = 7
+
+	DefaultBucketGameRows             = 10
+	DefaultBucketGameColumns          = 3
+	DefaultBucketNumberPossiblePieces = 1
 )
 
 // DOC: Possible states a game can be in
@@ -243,6 +247,36 @@ var DefaultPieceMap = [][][][]int{
 	},
 }
 
+var DefaultBucketPieceMap = [][][][]int{
+	{
+		// block piece
+		{
+			{0, 1, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+		},
+		{
+			{0, 1, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+		},
+		{
+			{0, 1, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+		},
+		{
+			{0, 1, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+		},
+	},
+}
+
 // NewGame creates a new instance of a tetris game.
 // Returns:
 // - A game struct for the new game
@@ -252,7 +286,19 @@ func NewGame() (*Game, chan<- byte, <-chan Game) {
 
 	seed := time.Now().UTC().UnixNano()
 
-	return NewSeededGame(seed)
+	return NewSeededGame(seed, DefaultGameRows, DefaultGameColumns, DefaultNumberPossiblePieces, DefaultPieceMap)
+}
+
+// NewBucketGame creates a new instance of a simple tetris-like game.
+// Returns:
+// - A game struct for the new game
+// - The input channel that player moves will be read from
+// - An output channel that will be sent each state change
+func NewBucketGame() (*Game, chan<- byte, <-chan Game) {
+
+	seed := time.Now().UTC().UnixNano()
+
+	return NewSeededGame(seed, DefaultBucketGameRows, DefaultBucketGameColumns, DefaultBucketNumberPossiblePieces, DefaultBucketPieceMap)
 }
 
 // NewSeededGame creates a new instance of a game using the the PRNG seed.
@@ -262,19 +308,20 @@ func NewGame() (*Game, chan<- byte, <-chan Game) {
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewSeededGame(seed int64) (*Game, chan<- byte, <-chan Game) {
+func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][][][]int) (*Game, chan<- byte, <-chan Game) {
 	g := Game{
-		Seed:                 seed,
-		State:                StateInitializing,
-		Piece:                1,
-		PieceRotation:        0,
-		PiecePosCol:          4,
-		PiecePosRow:          1,
-		GameRows:             DefaultGameRows,
-		GameColumns:          DefaultGameColumns,
-		NumberPossiblePieces: DefaultNumberPossiblePieces,
-		PieceMap:             DefaultPieceMap,
+		Seed:          seed,
+		State:         StateInitializing,
+		Piece:         1,
+		PieceRotation: 0,
+		PiecePosCol:   4,
+		PiecePosRow:   1,
 	}
+	g.GameRows = rows
+	g.GameColumns = cols
+	g.NumberPossiblePieces = num_pieces
+	g.PieceMap = piece_map
+
 	g.Field = make([][]int, g.GameRows+2)
 	for i := range g.Field {
 		g.Field[i] = make([]int, g.GameColumns+2)
@@ -435,7 +482,7 @@ func (g *Game) nextPiece() error {
 
 	g.Piece = int(x)
 
-	g.PiecePosCol = 4
+	g.PiecePosCol = g.GameColumns / 2
 	g.PiecePosRow = 1
 	g.PieceRotation = 0
 
