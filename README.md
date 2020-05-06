@@ -17,7 +17,8 @@ Screenshot:
 
 [Video of game play](https://youtu.be/E1sI_jp-vLU "Video of game play") (A human is playing on the left, the right is showing a game with PRNG input.)
 
-Bucket Game:
+Bucket game
+----------------
 
 There is a ```-b``` flag to the ```tetris_console_game``` to play a simple bucket tetris-like game.  The bucket game only has one piece and that piece is a single block.  The game only has 10 rows and 3 columns.
 
