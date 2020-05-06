@@ -9,9 +9,9 @@ import (
 
 // DOC: Constants used in the game engine
 const (
-	GameRows             = 18
-	GameColumns          = 10
-	NumberPossiblePieces = 7
+	DefaultGameRows             = 18
+	DefaultGameColumns          = 10
+	DefaultNumberPossiblePieces = 7
 )
 
 // DOC: Possible states a game can be in
@@ -34,20 +34,24 @@ const (
 
 // DOC: Data structure describing a game
 type Game struct {
-	Seed            int64
-	State           gamestate
-	PRNG            *rand.Rand
-	Piece           int
-	PieceRotation   int
-	PiecePosCol     int
-	PiecePosRow     int
-	Field           [GameRows + 2][GameColumns + 2]int
-	ScorePieceCount int
-	ScoreLineCount  int
+	Seed                 int64
+	State                gamestate
+	PRNG                 *rand.Rand
+	Piece                int
+	PieceRotation        int
+	PiecePosCol          int
+	PiecePosRow          int
+	Field                [][]int
+	ScorePieceCount      int
+	ScoreLineCount       int
+	GameRows             int
+	GameColumns          int
+	NumberPossiblePieces int
+	PieceMap             [][][][]int
 }
 
 // DOC: Mapping from piece and rotation to blocks covered
-var PieceMap = [7][4][4][4]int{
+var DefaultPieceMap = [][][][]int{
 	{
 		// I piece
 		{
@@ -248,7 +252,7 @@ func NewGame() (*Game, chan<- byte, <-chan Game) {
 
 	seed := time.Now().UTC().UnixNano()
 
-	return NewSeededGame(seed);
+	return NewSeededGame(seed)
 }
 
 // NewSeededGame creates a new instance of a game using the the PRNG seed.
@@ -259,27 +263,35 @@ func NewGame() (*Game, chan<- byte, <-chan Game) {
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
 func NewSeededGame(seed int64) (*Game, chan<- byte, <-chan Game) {
-g := Game{
-		Seed:          seed,
-		State:         StateInitializing,
-		Piece:         1,
-		PieceRotation: 0,
-		PiecePosCol:   4,
-		PiecePosRow:   1,
+	g := Game{
+		Seed:                 seed,
+		State:                StateInitializing,
+		Piece:                1,
+		PieceRotation:        0,
+		PiecePosCol:          4,
+		PiecePosRow:          1,
+		GameRows:             DefaultGameRows,
+		GameColumns:          DefaultGameColumns,
+		NumberPossiblePieces: DefaultNumberPossiblePieces,
+		PieceMap:             DefaultPieceMap,
+	}
+	g.Field = make([][]int, g.GameRows+2)
+	for i := range g.Field {
+		g.Field[i] = make([]int, g.GameColumns+2)
 	}
 
 	source := rand.NewSource(g.Seed)
 	g.PRNG = rand.New(source)
 	g.nextPiece()
 
-	for j := 0; j < GameColumns+2; j++ {
+	for j := 0; j < g.GameColumns+2; j++ {
 		g.Field[0][j] = 1
-		g.Field[GameRows+1][j] = 1
+		g.Field[g.GameRows+1][j] = 1
 	}
-	for i := 1; i < GameRows+1; i++ {
+	for i := 1; i < g.GameRows+1; i++ {
 		g.Field[i][0] = 1
-		g.Field[i][GameColumns+1] = 1
-		for j := 1; j < GameColumns+1; j++ {
+		g.Field[i][g.GameColumns+1] = 1
+		for j := 1; j < g.GameColumns+1; j++ {
 			g.Field[i][j] = 0
 		}
 	}
@@ -308,16 +320,16 @@ func (g *Game) GetDebugState() string {
 	// draw the piece on the field
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
-			if 0 != PieceMap[g.Piece][g.PieceRotation][i][j] {
+			if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
 				g.Field[g.PiecePosRow+i+1][g.PiecePosCol+j+1] = 2
 			}
 		}
 	}
 
 	buffer.WriteString("Field:\n")
-	for i := 0; i < GameRows+2; i++ {
+	for i := 0; i < g.GameRows+2; i++ {
 		buffer.WriteString("    ")
-		for j := 0; j < GameColumns+2; j++ {
+		for j := 0; j < g.GameColumns+2; j++ {
 			if 0 == g.Field[i][j] {
 				buffer.WriteString(" ")
 			} else {
@@ -330,7 +342,7 @@ func (g *Game) GetDebugState() string {
 	// remove the piece on the field data structure
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
-			if 0 != PieceMap[g.Piece][g.PieceRotation][i][j] {
+			if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
 				g.Field[g.PiecePosRow+i+1][g.PiecePosCol+j+1] = 0
 			}
 		}
@@ -346,11 +358,11 @@ func (g *Game) GetDebugState() string {
 // Returns:
 // - true if there is a collision
 // - false otherwise
-func pieceCollision(field [GameRows + 2][GameColumns + 2]int, piece int, rotation int, row int, col int) bool {
+func pieceCollision(g *Game, piece int, rotation int, row int, col int) bool {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
-			if 0 != PieceMap[piece][rotation][i][j] {
-				if 0 != field[row+i][col+j] {
+			if 0 != g.PieceMap[piece][rotation][i][j] {
+				if 0 != g.Field[row+i][col+j] {
 					return true
 				}
 			}
@@ -364,21 +376,21 @@ func pieceCollision(field [GameRows + 2][GameColumns + 2]int, piece int, rotatio
 // rotate changes the rotation of the piece only if the rotation would not collide.
 func (g *Game) rotate() {
 
-	if !pieceCollision(g.Field, g.Piece, (g.PieceRotation+1)%4, g.PiecePosRow, g.PiecePosCol) {
+	if !pieceCollision(g, g.Piece, (g.PieceRotation+1)%4, g.PiecePosRow, g.PiecePosCol) {
 		g.PieceRotation = (g.PieceRotation + 1) % 4
 	}
 }
 
 // moveLeft move the position to the left only if the move would not collide.
 func (g *Game) moveLeft() {
-	if !pieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol-1) {
+	if !pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol-1) {
 		g.PiecePosCol--
 	}
 }
 
 // moveRight move the position to the right only if the move would not collide.
 func (g *Game) moveRight() {
-	if !pieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol+1) {
+	if !pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol+1) {
 		g.PiecePosCol++
 	}
 }
@@ -393,7 +405,7 @@ func (g *Game) lowerPiece() bool {
 
 	// GOAL: lower the piece one step
 
-	if pieceCollision(g.Field, g.Piece, g.PieceRotation, g.PiecePosRow+1, g.PiecePosCol) {
+	if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow+1, g.PiecePosCol) {
 		// CLAIM: Piece will collides if lowered.
 		return false
 	}
@@ -407,7 +419,7 @@ func (g *Game) placePiece() {
 
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
-			if 0 != PieceMap[g.Piece][g.PieceRotation][i][j] {
+			if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
 				g.Field[g.PiecePosRow+i][g.PiecePosCol+j] = 1
 			}
 		}
@@ -419,7 +431,7 @@ func (g *Game) placePiece() {
 func (g *Game) nextPiece() error {
 	// GOAL: pick a new random piece
 
-	x := g.PRNG.Intn(NumberPossiblePieces)
+	x := g.PRNG.Intn(g.NumberPossiblePieces)
 
 	g.Piece = int(x)
 
@@ -434,11 +446,11 @@ func (g *Game) nextPiece() error {
 // above rows down.
 func (g *Game) clearCompletedRows() {
 
-	for i := 1; i < GameRows+1; i++ {
+	for i := 1; i < g.GameRows+1; i++ {
 
 		row_complete := true
 
-		for j := 1; j < GameColumns+1; j++ {
+		for j := 1; j < g.GameColumns+1; j++ {
 			if 0 == g.Field[i][j] {
 				row_complete = false
 			}
@@ -460,7 +472,7 @@ func (g *Game) ShiftRowsDown(start_row int) {
 	// Shifts down all rows above the start_row.
 
 	for i := start_row; 1 < i; i-- {
-		for j := 1; j < GameColumns+1; j++ {
+		for j := 1; j < g.GameColumns+1; j++ {
 			g.Field[i][j] = g.Field[i-1][j]
 		}
 	}

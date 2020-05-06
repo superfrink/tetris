@@ -73,8 +73,8 @@ mainloop:
 		case _ = <-game_output_channel:
 
 			// GOAL: Draw the game field
-			for i := 0; i < engine.GameRows+2; i++ {
-				for j := 0; j < engine.GameColumns+2; j++ {
+			for i := 0; i < g.GameRows+2; i++ {
+				for j := 0; j < g.GameColumns+2; j++ {
 					if 0 != g.Field[i][j] {
 						tbprint(i, j, "X")
 					} else {
@@ -86,7 +86,7 @@ mainloop:
 			// GOAL: Draw the piece in play
 			for i := 0; i < 4; i++ {
 				for j := 0; j < 4; j++ {
-					if 0 != engine.PieceMap[g.Piece][g.PieceRotation][i][j] {
+					if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
 						tbprint(g.PiecePosRow+i, g.PiecePosCol+j, "*")
 					}
 				}
