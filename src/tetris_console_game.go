@@ -50,14 +50,14 @@ func main() {
 	var key rune
 
 	// GOAL: Create an instance of the game
-	var g *engine.Game
+	var game_state *engine.Game
 	var game_user_input_ch chan<- byte
-	var game_output_channel <-chan engine.Game
+	var game_output_channel <-chan *engine.Game
 
 	if *flag_bucketgame {
-		g, game_user_input_ch, game_output_channel = engine.NewBucketGame()
+		_, game_user_input_ch, game_output_channel = engine.NewBucketGame()
 	} else {
-		g, game_user_input_ch, game_output_channel = engine.NewGame()
+		_, game_user_input_ch, game_output_channel = engine.NewGame()
 	}
 
 	// Main game loop
@@ -82,12 +82,12 @@ mainloop:
 				game_user_input_ch <- engine.PlayInputRotate
 			}
 
-		case _ = <-game_output_channel:
+		case game_state = <-game_output_channel:
 
 			// GOAL: Draw the game field
-			for i := 0; i < g.GameRows+2; i++ {
-				for j := 0; j < g.GameColumns+2; j++ {
-					if 0 != g.Field[i][j] {
+			for i := 0; i < game_state.GameRows+2; i++ {
+				for j := 0; j < game_state.GameColumns+2; j++ {
+					if 0 != game_state.Field[i][j] {
 						tbprint(i, j, "X")
 					} else {
 						tbprint(i, j, " ")
@@ -98,22 +98,22 @@ mainloop:
 			// GOAL: Draw the piece in play
 			for i := 0; i < 4; i++ {
 				for j := 0; j < 4; j++ {
-					if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
-						tbprint(g.PiecePosRow+i, g.PiecePosCol+j, "*")
+					if 0 != game_state.PieceMap[game_state.Piece][game_state.PieceRotation][i][j] {
+						tbprint(game_state.PiecePosRow+i, game_state.PiecePosCol+j, "*")
 					}
 				}
 			}
 
 			// GOAL: Draw the score
-			tbprint(2, 15, fmt.Sprintf("Pieces: %d", g.ScorePieceCount))
-			tbprint(3, 15, fmt.Sprintf("Lines:  %d", g.ScoreLineCount))
+			tbprint(2, 15, fmt.Sprintf("Pieces: %d", game_state.ScorePieceCount))
+			tbprint(3, 15, fmt.Sprintf("Lines:  %d", game_state.ScoreLineCount))
 
 			if true {
 				// FIXME: only show when debugging
-				tbprint(7, 15, fmt.Sprintf("Piece    : %2d", g.Piece))
-				tbprint(8, 15, fmt.Sprintf("Rotation : %2d", g.PieceRotation))
-				tbprint(9, 15, fmt.Sprintf("Piece row: %2d", g.PiecePosRow))
-				tbprint(10, 15, fmt.Sprintf("Piece col: %2d", g.PiecePosCol))
+				tbprint(7, 15, fmt.Sprintf("Piece    : %2d", game_state.Piece))
+				tbprint(8, 15, fmt.Sprintf("Rotation : %2d", game_state.PieceRotation))
+				tbprint(9, 15, fmt.Sprintf("Piece row: %2d", game_state.PiecePosRow))
+				tbprint(10, 15, fmt.Sprintf("Piece col: %2d", game_state.PiecePosCol))
 			}
 
 		}
@@ -122,7 +122,7 @@ mainloop:
 		termbox.Flush()
 
 		// GOAL: Check if the game is over
-		if engine.StateGameOver == g.State {
+		if engine.StateGameOver == game_state.State {
 			tbprint(12, 20, "GAME OVER")
 			tbprint(13, 17, "press any key")
 			quit = true

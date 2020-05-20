@@ -282,7 +282,7 @@ var DefaultBucketPieceMap = [][][][]int{
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewGame() (*Game, chan<- byte, <-chan Game) {
+func NewGame() (*Game, chan<- byte, <-chan *Game) {
 
 	seed := time.Now().UTC().UnixNano()
 
@@ -294,7 +294,7 @@ func NewGame() (*Game, chan<- byte, <-chan Game) {
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewBucketGame() (*Game, chan<- byte, <-chan Game) {
+func NewBucketGame() (*Game, chan<- byte, <-chan *Game) {
 
 	seed := time.Now().UTC().UnixNano()
 
@@ -308,7 +308,7 @@ func NewBucketGame() (*Game, chan<- byte, <-chan Game) {
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][][][]int) (*Game, chan<- byte, <-chan Game) {
+func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][][][]int) (*Game, chan<- byte, <-chan *Game) {
 	g := Game{
 		Seed:          seed,
 		State:         StateInitializing,
@@ -344,12 +344,49 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 	}
 
 	player_input_channel := make(chan byte)
-	output_state_channel := make(chan Game)
+	output_state_channel := make(chan *Game)
 
 	// GOAL: Start the main game loop
 	g.MainGameLoop(player_input_channel, output_state_channel)
 
 	return &g, player_input_channel, output_state_channel
+}
+
+// CopyOfState returns a copy of the game's current state that is readable
+// independent of later game state changes.
+//
+// Returns:
+// - A copy of the game struct.
+// Note:
+// - The PieceMap is a reference to the current game and not a copy so
+//   changes made to it would change the current game.
+// - The PRNG is not usable so the copy is not a playable game.
+func (g *Game) CopyOfState() *Game {
+
+	new_copy := Game{
+		Seed:                 g.Seed,
+		State:                g.State,
+		PRNG:                 nil,
+		Piece:                g.Piece,
+		PieceRotation:        g.PieceRotation,
+		PiecePosCol:          g.PiecePosCol,
+		PiecePosRow:          g.PiecePosRow,
+		Field:                nil,
+		GameRows:             g.GameRows,
+		GameColumns:          g.GameColumns,
+		NumberPossiblePieces: g.NumberPossiblePieces,
+		PieceMap:             g.PieceMap,
+	}
+
+	new_copy.Field = make([][]int, g.GameRows+2)
+	for i := range new_copy.Field {
+		new_copy.Field[i] = make([]int, g.GameColumns+2)
+		for j := 0; j < g.GameColumns+2; j++ {
+			new_copy.Field[i][j] = g.Field[i][j]
+		}
+	}
+
+	return &new_copy
 }
 
 func (g *Game) GetDebugState() string {
@@ -527,8 +564,8 @@ func (g *Game) ShiftRowsDown(start_row int) {
 
 // MainGameLoop provides the main game loop logic.
 // Reads player input from channel player_input.
-// Sends game state to channel game_state.
-func (g *Game) MainGameLoop(player_input <-chan byte, game_state chan<- Game) {
+// Sends game state to channel game_state_ch.
+func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game) {
 
 	// GOAL: Create a channel for a ticker to drop the pieces
 	ticker := time.NewTicker(time.Millisecond * 500) // FIXME: use a global/config for drop speed
@@ -571,10 +608,10 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state chan<- Game) {
 					g.nextPiece()
 				}
 			}
-			game_state <- *g
+			game_state_ch <- g.CopyOfState()
 		}
 
 		g.State = StateGameOver
-		game_state <- *g
+		game_state_ch <- g.CopyOfState()
 	}()
 }
