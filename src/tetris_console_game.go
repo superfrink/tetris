@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./engine"
+	"superfrink.net/tetris/engine"
 	"flag"
 	"fmt"
 	"github.com/nsf/termbox-go"
