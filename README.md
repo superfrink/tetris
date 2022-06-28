@@ -23,3 +23,8 @@ Bucket game
 There is a ```-b``` flag to the ```tetris_console_game``` to play a simple bucket tetris-like game.  The bucket game only has one piece and that piece is a single block.  The game only has 10 rows and 3 columns.
 
 ![Bucket Game Screenshot](https://raw.githubusercontent.com/superfrink/tetris/master/doc/bucket-game-screenshot.png)
+
+Build status
+----------------
+
+![Check-In Build](https://github.com/superfrink/tetris/actions/workflows/push-check.yml/badge.svg)
