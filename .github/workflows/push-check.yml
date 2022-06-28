@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: '1.17'
-      - run: |
-          go version
-	  cd src
-          go build -o tetris_console_game tetris_console_game.go
+      - name: build
+        working-directory: ./src
+        go version
+        go build -o tetris_console_game tetris_console_game.go
