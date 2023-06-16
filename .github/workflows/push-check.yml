@@ -2,13 +2,16 @@ name: push-check
 on: [push]
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '1.20'
           check-latest: true
       - name: build
         working-directory: ./src
-        run: go version && go build -o tetris_console_game tetris_console_game.go
+        run: |
+          go version && go build -o tetris_console_game tetris_console_game.go
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck -mode=binary tetris_console_game
