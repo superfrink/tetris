@@ -11,7 +11,7 @@ jobs:
           check-latest: true
 
       - name: go_vuln_check
-        uses: Templum/govulncheck-action@0.10.1
+        uses: Templum/govulncheck-action@v0.10.1
         with:
           go-version: '1.20'
           vulncheck-version: latest
