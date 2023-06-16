@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
 
       - name: go_vuln_check
         uses: Templum/govulncheck-action@0.10.1
@@ -15,7 +16,6 @@ jobs:
           fail-on-vuln: true
 
       - name: build
-        uses: actions/setup-go@v3
         with:
           go-version: '1.20'
           check-latest: true
