@@ -512,7 +512,7 @@ func (g *Game) placePiece() {
 
 // nextPiece updates the game state to have a new piece in play at the top of the field.
 // FIXME: when would this return an error?
-func (g *Game) nextPiece() error {
+func (g *Game) nextPiece() {
 	// GOAL: pick a new random piece
 
 	x := g.PRNG.Intn(g.NumberPossiblePieces)
@@ -522,8 +522,6 @@ func (g *Game) nextPiece() error {
 	g.PiecePosCol = g.GameColumns / 2
 	g.PiecePosRow = 1
 	g.PieceRotation = 0
-
-	return nil
 }
 
 // clearCompletedRows finds completed rows in the field, removes them, and drops
