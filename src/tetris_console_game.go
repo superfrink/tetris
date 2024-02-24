@@ -1,11 +1,12 @@
 package main
 
 import (
-	"superfrink.net/tetris/engine"
 	"flag"
 	"fmt"
-	"github.com/nsf/termbox-go"
 	"log"
+
+	"github.com/nsf/termbox-go"
+	"superfrink.net/tetris/engine"
 )
 
 // tbprint is based on from https://github.com/jjinux/gotetris/

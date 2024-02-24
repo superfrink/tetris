@@ -358,9 +358,9 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 // Returns:
 // - A copy of the game struct.
 // Note:
-// - The PieceMap is a reference to the current game and not a copy so
-//   changes made to it would change the current game.
-// - The PRNG is not usable so the copy is not a playable game.
+//   - The PieceMap is a reference to the current game and not a copy so
+//     changes made to it would change the current game.
+//   - The PRNG is not usable so the copy is not a playable game.
 func (g *Game) CopyOfState() *Game {
 
 	new_copy := Game{
@@ -371,6 +371,8 @@ func (g *Game) CopyOfState() *Game {
 		PieceRotation:        g.PieceRotation,
 		PiecePosCol:          g.PiecePosCol,
 		PiecePosRow:          g.PiecePosRow,
+		ScoreLineCount:       g.ScoreLineCount,
+		ScorePieceCount:      g.ScorePieceCount,
 		Field:                nil,
 		GameRows:             g.GameRows,
 		GameColumns:          g.GameColumns,
@@ -522,6 +524,8 @@ func (g *Game) nextPiece() {
 	g.PiecePosCol = g.GameColumns / 2
 	g.PiecePosRow = 1
 	g.PieceRotation = 0
+	g.ScorePieceCount++
+
 }
 
 // clearCompletedRows finds completed rows in the field, removes them, and drops
@@ -597,7 +601,6 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 				if !able_to_lower {
 					g.placePiece()
 					g.clearCompletedRows()
-					g.ScorePieceCount++
 
 					if 1 == g.PiecePosRow {
 						// CLAIM: game over
