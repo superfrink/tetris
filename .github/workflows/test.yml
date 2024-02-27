@@ -4,12 +4,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: test
+      - name: checkout
         uses: actions/checkout@v3
+      - name: setup
         uses: actions/setup-go@v3
         with:
           go-version: '1.21'
           check-latest: true
+      - name: test
         working-directory: ./src
         run: |
           go test -race -race -coverprofile=coverage.out -covermode=atomic ./...
