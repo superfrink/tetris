@@ -575,16 +575,15 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 	var key byte
 	go func() {
 
-		quit := false
 		g.State = StateRunning
 
-		for !quit {
+		for {
 
 			select {
 			case key = <-player_input:
 				switch key {
 				case PlayInputQuit:
-					quit = true
+					g.State = StateGameOver
 				case PlayInputMoveLeft:
 					g.moveLeft()
 				case PlayInputMoveRight:
@@ -604,15 +603,20 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 
 					if 1 == g.PiecePosRow {
 						// CLAIM: game over
-						quit = true
+						g.State = StateGameOver
 					}
 					g.nextPiece()
 				}
 			}
+
+			if g.State == StateGameOver {
+				ticker.Stop()
+			}
+
 			game_state_ch <- g.CopyOfState()
+
 		}
 
-		g.State = StateGameOver
 		game_state_ch <- g.CopyOfState()
 	}()
 }

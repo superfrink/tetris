@@ -3,7 +3,6 @@ package engine
 import (
 	"log"
 	"testing"
-	"time"
 )
 
 func TestCreateGame(t *testing.T) {
@@ -34,8 +33,6 @@ func TestCreateGame(t *testing.T) {
 	}
 
 	gameInput <- PlayInputQuit
-	game = <-gameOutput
-	time.Sleep(time.Second * 1) // FIXME: wait for game state to update
 	game = <-gameOutput
 	log.Printf("%+v", game)
 

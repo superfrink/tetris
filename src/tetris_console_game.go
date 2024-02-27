@@ -119,14 +119,13 @@ mainloop:
 
 		}
 
-		// GOAL: Update the screen
-		termbox.Flush()
-
 		// GOAL: Check if the game is over
 		if engine.StateGameOver == game_state.State {
 			tbprint(12, 20, "GAME OVER")
 			tbprint(13, 17, "press any key")
 			quit = true
 		}
+		// GOAL: Update the screen
+		termbox.Flush()
 	}
 }
