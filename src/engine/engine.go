@@ -614,9 +614,6 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 			}
 
 			game_state_ch <- g.CopyOfState()
-
 		}
-
-		game_state_ch <- g.CopyOfState()
 	}()
 }
