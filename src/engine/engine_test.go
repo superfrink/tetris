@@ -3,11 +3,14 @@ package engine
 import (
 	"log"
 	"testing"
+	"time"
 )
 
 func TestCreateGame(t *testing.T) {
 
-	game, gameInput, gameOutput := NewGame()
+	_, gameInput, gameOutput := NewGame()
+
+	game := <-gameOutput
 	log.Printf("%+v", game)
 
 	if game.State != StateRunning {
@@ -31,7 +34,9 @@ func TestCreateGame(t *testing.T) {
 	}
 
 	gameInput <- PlayInputQuit
-	<-gameOutput
+	game = <-gameOutput
+	time.Sleep(time.Second * 1) // FIXME: wait for game state to update
+	game = <-gameOutput
 	log.Printf("%+v", game)
 
 	if game.State != StateGameOver {
