@@ -13,9 +13,9 @@ jobs:
         working-directory: ./src
         run: |
           go test -race -race -coverprofile=coverage.out -covermode=atomic ./...
+      - uses: codecov/codecov-action@v4.0.1
       - name: Upload coverage reports to Codecov
         working-directory: ./src
-        uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
