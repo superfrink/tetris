@@ -16,9 +16,8 @@ jobs:
         run: |
           go test -race -race -coverprofile=coverage.out -covermode=atomic ./...
       - name: Upload coverage reports to Codecov
-        working-directory: ./src
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.out
+          files: ./src/coverage.out
           slug: superfrink/tetris
