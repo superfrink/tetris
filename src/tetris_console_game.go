@@ -33,7 +33,7 @@ func main() {
 
 	// GOAL: Setup the keystroke legend
 	// FIXME: It would be good to use variables for each key
-	tbprint(21, 0, "q = quit\tr = rotate\th = left\tl = right")
+	tbprint(21, 0, "q = quit\tr = rotate\th = left\tl = right\tp = pause")
 
 	termbox.Flush()
 
@@ -61,6 +61,9 @@ func main() {
 		_, game_user_input_ch, game_output_channel = engine.NewGame()
 	}
 
+	// Wait until the game is ready
+	game_state = <-game_output_channel
+
 	// Main game loop
 	quit := false
 mainloop:
@@ -74,11 +77,13 @@ mainloop:
 
 			switch key {
 			case 'q':
-				game_user_input_ch <- engine.PlayInputQuit
+				game_user_input_ch <- engine.PlayInputStop
 			case 'h':
 				game_user_input_ch <- engine.PlayInputMoveLeft
 			case 'l':
 				game_user_input_ch <- engine.PlayInputMoveRight
+			case 'p':
+				game_user_input_ch <- engine.PlayInputPause
 			case 'r':
 				game_user_input_ch <- engine.PlayInputRotate
 			}
@@ -120,7 +125,7 @@ mainloop:
 		}
 
 		// GOAL: Check if the game is over
-		if engine.StateGameOver == game_state.State {
+		if game_state != nil && engine.StateGameOver == game_state.State {
 			tbprint(12, 20, "GAME OVER")
 			tbprint(13, 17, "press any key")
 			quit = true

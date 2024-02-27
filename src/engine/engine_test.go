@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestCreateGame(t *testing.T) {
+func TestCreateStopGame(t *testing.T) {
 
 	_, gameInput, gameOutput := NewGame()
 
@@ -13,7 +13,7 @@ func TestCreateGame(t *testing.T) {
 	log.Printf("%+v", game)
 
 	if game.State != StateRunning {
-		t.Errorf("Game state not running.  %d", game.State)
+		t.Errorf("Game not running.  %d", game.State)
 	}
 
 	if game.ScoreLineCount != 0 {
@@ -32,11 +32,39 @@ func TestCreateGame(t *testing.T) {
 		t.Errorf("Game possible pieces not expected.  %d", game.NumberPossiblePieces)
 	}
 
-	gameInput <- PlayInputQuit
+	gameInput <- PlayInputStop
 	game = <-gameOutput
 	log.Printf("%+v", game)
 
 	if game.State != StateGameOver {
-		t.Errorf("Game state not over.  %d", game.State)
+		t.Errorf("Game not over.  %d", game.State)
+	}
+}
+
+func TestPauseGame(t *testing.T) {
+
+	_, gameInput, gameOutput := NewGame()
+
+	game := <-gameOutput
+	log.Printf("%+v", game)
+
+	if game.State != StateRunning {
+		t.Errorf("Game not running.  %d", game.State)
+	}
+
+	gameInput <- PlayInputPause
+	game = <-gameOutput
+	log.Printf("%+v", game)
+
+	if game.State != StatePaused {
+		t.Errorf("Game not paused.  %d", game.State)
+	}
+
+	gameInput <- PlayInputPause
+	game = <-gameOutput
+	log.Printf("%+v", game)
+
+	if game.State != StateRunning {
+		t.Errorf("Game not running.  %d", game.State)
 	}
 }

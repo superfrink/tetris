@@ -25,11 +25,13 @@ const (
 	StateInitializing = iota
 	StateRunning
 	StateGameOver
+	StatePaused
 )
 
 // DOC: Player input commands available
 const (
-	PlayInputQuit = iota
+	PlayInputStop = iota
+	PlayInputPause
 	PlayInputMoveLeft
 	PlayInputMoveRight
 	PlayInputRotate
@@ -578,42 +580,56 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 		g.State = StateRunning
 
 		for {
+			game_state_ch <- g.CopyOfState()
 
 			select {
 			case key = <-player_input:
 				switch key {
-				case PlayInputQuit:
+				case PlayInputStop:
 					g.State = StateGameOver
+				case PlayInputPause:
+					switch g.State {
+					case StateRunning:
+						g.State = StatePaused
+					case StatePaused:
+						g.State = StateRunning
+					}
 				case PlayInputMoveLeft:
-					g.moveLeft()
+					if g.State == StateRunning {
+						g.moveLeft()
+					}
 				case PlayInputMoveRight:
-					g.moveRight()
+					if g.State == StateRunning {
+						g.moveRight()
+					}
 				case PlayInputRotate:
-					g.rotate()
+					if g.State == StateRunning {
+						g.rotate()
+					}
 				case PlayInputDrop:
 					//FIXME: drop
 				}
 
 			case <-ticker.C:
-				// Lower the piece and check if it collides.
-				able_to_lower := g.lowerPiece()
-				if !able_to_lower {
-					g.placePiece()
-					g.clearCompletedRows()
+				if g.State == StateRunning {
+					// Lower the piece and check if it collides.
+					able_to_lower := g.lowerPiece()
+					if !able_to_lower {
+						g.placePiece()
+						g.clearCompletedRows()
 
-					if 1 == g.PiecePosRow {
-						// CLAIM: game over
-						g.State = StateGameOver
+						if 1 == g.PiecePosRow {
+							// CLAIM: game over
+							g.State = StateGameOver
+						}
+						g.nextPiece()
 					}
-					g.nextPiece()
 				}
 			}
 
 			if g.State == StateGameOver {
 				ticker.Stop()
 			}
-
-			game_state_ch <- g.CopyOfState()
 		}
 	}()
 }
