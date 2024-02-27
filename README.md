@@ -28,3 +28,4 @@ Build status
 ----------------
 
 ![Check-In Build](https://github.com/superfrink/tetris/actions/workflows/push-check.yml/badge.svg)
+[![codecov](https://codecov.io/gh/superfrink/tetris/graph/badge.svg?token=OWQRHVV6LG)](https://codecov.io/gh/superfrink/tetris)
