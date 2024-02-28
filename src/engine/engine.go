@@ -345,8 +345,8 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 		}
 	}
 
-	player_input_channel := make(chan byte)
-	output_state_channel := make(chan *Game)
+	player_input_channel := make(chan byte, 5)
+	output_state_channel := make(chan *Game, 5)
 
 	// GOAL: Start the main game loop
 	g.MainGameLoop(player_input_channel, output_state_channel)
