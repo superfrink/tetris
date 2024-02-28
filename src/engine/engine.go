@@ -576,11 +576,12 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 
 	var key byte
 	go func() {
-
+		dropPiece := false
 		g.State = StateRunning
 
 		for {
 			game_state_ch <- g.CopyOfState()
+			dropPiece = false
 
 			select {
 			case key = <-player_input:
@@ -607,23 +608,27 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 						g.rotate()
 					}
 				case PlayInputDrop:
-					//FIXME: drop
+					dropPiece = true
 				}
 
 			case <-ticker.C:
 				if g.State == StateRunning {
-					// Lower the piece and check if it collides.
-					able_to_lower := g.lowerPiece()
-					if !able_to_lower {
-						g.placePiece()
-						g.clearCompletedRows()
+					dropPiece = true
+				}
+			}
 
-						if 1 == g.PiecePosRow {
-							// CLAIM: game over
-							g.State = StateGameOver
-						}
-						g.nextPiece()
+			if dropPiece {
+				// Lower the piece and check if it collides.
+				able_to_lower := g.lowerPiece()
+				if !able_to_lower {
+					g.placePiece()
+					g.clearCompletedRows()
+
+					if 1 == g.PiecePosRow {
+						// CLAIM: game over
+						g.State = StateGameOver
 					}
+					g.nextPiece()
 				}
 			}
 

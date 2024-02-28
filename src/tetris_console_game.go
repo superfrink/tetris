@@ -33,7 +33,7 @@ func main() {
 
 	// GOAL: Setup the keystroke legend
 	// FIXME: It would be good to use variables for each key
-	tbprint(21, 0, "q = quit\tr = rotate\th = left\tl = right\tp = pause")
+	tbprint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
 
 	termbox.Flush()
 
@@ -78,6 +78,8 @@ mainloop:
 			switch key {
 			case 'q':
 				game_user_input_ch <- engine.PlayInputStop
+			case 'd':
+				game_user_input_ch <- engine.PlayInputDrop
 			case 'h':
 				game_user_input_ch <- engine.PlayInputMoveLeft
 			case 'l':
