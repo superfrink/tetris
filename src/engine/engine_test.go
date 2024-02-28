@@ -165,3 +165,20 @@ func TestPauseGame(t *testing.T) {
 		t.Errorf("Game not running.  %d", game.State)
 	}
 }
+
+func TestRotate(t *testing.T) {
+
+	_, gameInput, gameOutput := NewGame()
+
+	game := <-gameOutput
+
+	for i := 0; i < 6; i++ {
+		expected := i % 4
+		if expected != game.PieceRotation {
+			t.Errorf("Rotation not expected. %d, %d", expected, game.PieceRotation)
+		}
+
+		gameInput <- PlayInputRotate
+		game = <-gameOutput
+	}
+}
