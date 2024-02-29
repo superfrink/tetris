@@ -79,7 +79,7 @@ func TestCreateBucketGame(t *testing.T) {
 
 func TestMove(t *testing.T) {
 
-	_, gameInput, gameOutput := NewGame()
+	gameRoot, gameInput, gameOutput := NewGame()
 
 	game := <-gameOutput
 
@@ -89,58 +89,88 @@ func TestMove(t *testing.T) {
 
 	gameInput <- PlayInputToggleDrop
 	game = <-gameOutput
-	log.Printf("%+v", game)
 
-	posCol1 := game.PiecePosCol
+	gameRoot.Piece = 0
+	gameRoot.PieceRotation = 0
+
+	posCol := game.PiecePosCol
+	posColExpected := posCol - 1
 
 	gameInput <- PlayInputMoveLeft
 	game = <-gameOutput
-	posCol2 := game.PiecePosCol
-	log.Printf("%+v", game)
+	posCol = game.PiecePosCol
 
-	if posCol1-1 != posCol2 {
-		t.Errorf("Piece did not move left: %d -> %d", posCol1, posCol2)
+	if posCol != posColExpected {
+		t.Errorf("Piece did not move left.  got: %d  expected: %d", posCol, posColExpected)
+	}
+
+	for i := 12; i > 0; i-- {
+		gameInput <- PlayInputMoveLeft
+		game = <-gameOutput
+	}
+	posCol = game.PiecePosCol
+	posColExpected = 1
+
+	if posCol != posColExpected {
+		t.Errorf("Piece not on left wall.  got: %d  expected: %d", posCol, posColExpected)
 	}
 
 	gameInput <- PlayInputMoveRight
 	game = <-gameOutput
-	posCol3 := game.PiecePosCol
+	posCol = game.PiecePosCol
+	posColExpected = 2
 
-	if posCol3-1 != posCol2 {
-		t.Errorf("Piece did not move right: %d -> %d", posCol2, posCol3)
+	if posCol != posColExpected {
+		t.Errorf("Piece did not move right: got: %d  expected: %d", posCol, posColExpected)
 	}
 
-	posCol4 := game.PiecePosCol
-	for i := posCol3; i > 1; i-- {
+	for i := 12; i > 0; i-- {
+		gameInput <- PlayInputMoveRight
+		game = <-gameOutput
+	}
+	posCol = game.PiecePosCol
+	posColExpected = 7
+
+	if posCol != posColExpected {
+		t.Errorf("Piece not on right wall.  got: %d  expected: %d", posCol, posColExpected)
+	}
+
+	gameRoot.PieceRotation = 1
+
+	for i := 12; i > 0; i-- {
 		gameInput <- PlayInputMoveLeft
 		game = <-gameOutput
-		posCol4 = game.PiecePosCol
 	}
-	if posCol4 != 1 {
-		t.Errorf("Piece should be at pos 1: %d", posCol4)
+	posCol = game.PiecePosCol
+	posColExpected = 0
+
+	if posCol != posColExpected {
+		t.Errorf("Piece not on left wall.  got: %d  expected: %d", posCol, posColExpected)
 	}
 
-	gameInput <- PlayInputMoveLeft
-	game = <-gameOutput
-	posCol4 = game.PiecePosCol
-	if posCol4 != 1 {
-		// FIXME: test moving all the way to the left.  colum number depends on peice and rotation.
-		// t.Errorf("Piece should still be at pos 1: %d", posCol4)
+	for i := 12; i > 0; i-- {
+		gameInput <- PlayInputMoveRight
+		game = <-gameOutput
 	}
+	posCol = game.PiecePosCol
+	posColExpected = 9
 
-	// FIXME: test moving all the way to the right.  colum number depends on peice and rotation.
+	if posCol != posColExpected {
+		t.Errorf("Piece not on right wall.  got: %d  expected: %d", posCol, posColExpected)
+	}
 
 	gameInput <- PlayInputPause
 	game = <-gameOutput
 
-	if game.State != StatePaused {
-		t.Errorf("Game not paused.  %d", game.State)
-	}
-	gameInput <- PlayInputPause
-	game = <-gameOutput
+	posRow := game.PiecePosRow
+	posRowExpected := posRow + 1
 
-	if game.State != StateRunning {
-		t.Errorf("Game not running.  %d", game.State)
+	gameInput <- PlayInputDrop
+	game = <-gameOutput
+	posRow = game.PiecePosRow
+
+	if posRow != posRowExpected {
+		t.Errorf("Piece did not drop.  got: %d  expected: %d", posRow, posRowExpected)
 	}
 }
 
