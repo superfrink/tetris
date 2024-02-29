@@ -87,11 +87,16 @@ func TestMove(t *testing.T) {
 		t.Errorf("Game not running.  %d", game.State)
 	}
 
+	gameInput <- PlayInputToggleDrop
+	game = <-gameOutput
+	log.Printf("%+v", game)
+
 	posCol1 := game.PiecePosCol
 
 	gameInput <- PlayInputMoveLeft
 	game = <-gameOutput
 	posCol2 := game.PiecePosCol
+	log.Printf("%+v", game)
 
 	if posCol1-1 != posCol2 {
 		t.Errorf("Piece did not move left: %d -> %d", posCol1, posCol2)

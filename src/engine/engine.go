@@ -36,6 +36,7 @@ const (
 	PlayInputMoveRight
 	PlayInputRotate
 	PlayInputDrop
+	PlayInputToggleDrop // used for testing
 )
 
 // DOC: Data structure describing a game
@@ -577,6 +578,7 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 	var key byte
 	go func() {
 		dropPiece := false
+		dropEnabled := true
 		g.State = StateRunning
 
 		for {
@@ -609,10 +611,12 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 					}
 				case PlayInputDrop:
 					dropPiece = true
+				case PlayInputToggleDrop:
+					dropEnabled = !dropEnabled
 				}
 
 			case <-ticker.C:
-				if g.State == StateRunning {
+				if dropEnabled && g.State == StateRunning {
 					dropPiece = true
 				}
 			}
