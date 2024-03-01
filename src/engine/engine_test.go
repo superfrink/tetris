@@ -148,6 +148,32 @@ func TestCompleteRow(t *testing.T) {
 	}
 }
 
+func TestGameOver(t *testing.T) {
+	gameRoot, gameInput, gameOutput := NewGame()
+
+	gameInput <- PlayInputPause
+	game := <-gameOutput
+
+	if game.State != StateRunning {
+		t.Errorf("Game not running.  %d", game.State)
+	}
+
+	for i := 1; i < 18; i++ {
+		gameRoot.Field[i][5] = 1
+		gameRoot.Field[i][6] = 1
+	}
+
+	gameInput <- PlayInputPause
+	game = <-gameOutput
+
+	gameInput <- PlayInputDrop
+	game = <-gameOutput
+
+	if game.State != StateGameOver {
+		t.Errorf("Game not over.  %d", game.State)
+	}
+}
+
 //	func TestGetDebugState(t *testing.T) {
 //		// FIXME
 //	}
@@ -264,6 +290,8 @@ func TestPauseGame(t *testing.T) {
 
 	gameInput <- PlayInputPause
 	time.Sleep(3 * time.Second)
+
+	gameInput <- PlayInputDrop
 
 	gameInput <- PlayInputPause
 	game = <-gameOutput
