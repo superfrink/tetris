@@ -351,7 +351,6 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 
 	// GOAL: Start the main game loop
 	g.MainGameLoop(player_input_channel, output_state_channel)
-
 	return &g, player_input_channel, output_state_channel
 }
 
@@ -410,7 +409,7 @@ func (g *Game) GetDebugState() string {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
-				g.Field[g.PiecePosRow+i+1][g.PiecePosCol+j+1] = 2
+				g.Field[g.PiecePosRow+i][g.PiecePosCol+j] = 2
 			}
 		}
 	}
@@ -419,10 +418,13 @@ func (g *Game) GetDebugState() string {
 	for i := 0; i < g.GameRows+2; i++ {
 		buffer.WriteString("    ")
 		for j := 0; j < g.GameColumns+2; j++ {
-			if 0 == g.Field[i][j] {
+			switch g.Field[i][j] {
+			case 0:
 				buffer.WriteString(" ")
-			} else {
+			case 1:
 				buffer.WriteString("X")
+			case 2:
+				buffer.WriteString("*")
 			}
 		}
 		buffer.WriteString("\n")
@@ -432,7 +434,7 @@ func (g *Game) GetDebugState() string {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			if 0 != g.PieceMap[g.Piece][g.PieceRotation][i][j] {
-				g.Field[g.PiecePosRow+i+1][g.PiecePosCol+j+1] = 0
+				g.Field[g.PiecePosRow+i][g.PiecePosCol+j] = 0
 			}
 		}
 	}
@@ -573,7 +575,8 @@ func (g *Game) ShiftRowsDown(start_row int) {
 func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game) {
 
 	// GOAL: Create a channel for a ticker to drop the pieces
-	ticker := time.NewTicker(time.Millisecond * 500) // FIXME: use a global/config for drop speed
+	tickDuration := time.Millisecond * 500 // FIXME: use a global/config for drop speed
+	ticker := time.NewTicker(tickDuration)
 
 	var key byte
 	go func() {
@@ -594,8 +597,12 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 					switch g.State {
 					case StateRunning:
 						g.State = StatePaused
-					case StatePaused:
+						key := <- player_input
+						for key != PlayInputPause {
+							key = <- player_input
+						}
 						g.State = StateRunning
+						ticker.Reset(tickDuration)
 					}
 				case PlayInputMoveLeft:
 					if g.State == StateRunning {

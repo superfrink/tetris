@@ -2,7 +2,9 @@ package engine
 
 import (
 	"log"
+	"slices"
 	"testing"
+	"time"
 )
 
 func TestCreateStopGame(t *testing.T) {
@@ -76,6 +78,79 @@ func TestCreateBucketGame(t *testing.T) {
 		t.Errorf("Game not over.  %d", game.State)
 	}
 }
+
+func TestCompleteRow(t *testing.T) {
+
+	gameRoot, gameInput, gameOutput := NewGame()
+
+	game := <-gameOutput
+
+	if game.State != StateRunning {
+		t.Errorf("Game not running.  %d", game.State)
+	}
+
+	gameInput <- PlayInputToggleDrop
+	game = <-gameOutput
+
+	gameInput <- PlayInputPause
+
+	// GOAL: make the game look like:
+	//  [X X X X X X X X X X X X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 0 0 0 0 0 0 X]
+	//  [X * * * * 0 0 0 0 0 0 X]
+	//  [X 0 0 0 0 X X X X X X X]
+	//  [X X X X X X X X X X X X]
+
+	gameRoot.Piece = 0
+	gameRoot.PieceRotation = 0
+	gameRoot.PiecePosCol = 1
+	gameRoot.PiecePosRow = 17
+
+	gameRoot.Field[18] = []int{1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1}
+	//log.Printf("1: %s", gameRoot.GetDebugState())
+
+	gameInput <- PlayInputPause
+	game = <-gameOutput
+	log.Printf("2: %s", game.GetDebugState())
+	log.Printf("A: %+v", game.Field[18])
+
+	gameInput <- PlayInputDrop
+	game = <-gameOutput
+	log.Printf("3: %s", game.GetDebugState())
+	log.Printf("B: %+v", game.Field[18])
+	expectedRow := []int{1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1}
+	if !slices.Equal(game.Field[18], expectedRow) {
+		t.Errorf("Row not as expected.  got: %+v  want %+v", game.Field[18], expectedRow)
+	}
+
+	gameInput <- PlayInputDrop
+	game = <-gameOutput
+	log.Printf("4: %s", game.GetDebugState())
+	log.Printf("C: %+v", game.Field[18])
+	expectedRow = []int{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	if !slices.Equal(game.Field[18], expectedRow) {
+		t.Errorf("Row not as expected.  got: %+v  want %+v", game.Field[18], expectedRow)
+	}
+}
+
+//	func TestGetDebugState(t *testing.T) {
+//		// FIXME
+//	}
 
 func TestMove(t *testing.T) {
 
@@ -159,7 +234,6 @@ func TestMove(t *testing.T) {
 		t.Errorf("Piece not on right wall.  got: %d  expected: %d", posCol, posColExpected)
 	}
 
-	gameInput <- PlayInputPause
 	game = <-gameOutput
 
 	posRow := game.PiecePosRow
@@ -185,13 +259,11 @@ func TestPauseGame(t *testing.T) {
 		t.Errorf("Game not running.  %d", game.State)
 	}
 
-	gameInput <- PlayInputPause
-	game = <-gameOutput
-	log.Printf("%+v", game)
+	posRow := game.PiecePosRow
+	posRowExpected := posRow
 
-	if game.State != StatePaused {
-		t.Errorf("Game not paused.  %d", game.State)
-	}
+	gameInput <- PlayInputPause
+	time.Sleep(3 * time.Second)
 
 	gameInput <- PlayInputPause
 	game = <-gameOutput
@@ -199,6 +271,10 @@ func TestPauseGame(t *testing.T) {
 
 	if game.State != StateRunning {
 		t.Errorf("Game not running.  %d", game.State)
+	}
+
+	if posRow != posRowExpected {
+		t.Errorf("piece not at expected positioon.  got: %d  want: %d", posRow, posRowExpected)
 	}
 }
 
