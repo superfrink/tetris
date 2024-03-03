@@ -20,6 +20,9 @@ func tbprint(y int, x int, str string) {
 func main() {
 
 	var flag_bucketgame = flag.Bool("b", false, "Play a bucket game instead.")
+	// var natsUrl = flag.String("u", "", "NATS URL")
+	// var natsCredFile = flag.String("c", "", "NATS credential file")
+	// var streamGame = flag.Bool("s", false, "Stream game to NATS")
 	flag.Parse()
 
 	// GOAL: Setup the screen
