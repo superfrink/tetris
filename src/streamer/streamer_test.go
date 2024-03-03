@@ -11,33 +11,27 @@ var testURL = "connect.ngs.global"
 var testCredFile = "../NGS-Default-CLI.creds"
 
 func TestConnect(t *testing.T) {
-	s := Streamer{
-		chanName: "fixme" + t.Name(),
-	}
+	s := Streamer{}
 
-	err := s.Connect(testURL, testCredFile)
+	err := s.Connect(testURL, testCredFile, "fixme"+t.Name())
 	if err != nil {
 		t.Errorf("Connect failed. %q", err)
 	}
 }
 
 func TestConnectBadURL(t *testing.T) {
-	s := Streamer{
-		chanName: "fixme" + t.Name(),
-	}
+	s := Streamer{}
 
-	err := s.Connect("badurl", testCredFile)
+	err := s.Connect("badurl", testCredFile, "fixme"+t.Name())
 	if err == nil {
 		t.Errorf("Expected connect to fail.")
 	}
 }
 
 func TestConnectBadCredFile(t *testing.T) {
-	s := Streamer{
-		chanName: "fixme" + t.Name(),
-	}
+	s := Streamer{}
 
-	err := s.Connect(testURL, "badcredfilename")
+	err := s.Connect(testURL, "badcredfilename", "fixme"+t.Name())
 	if err == nil {
 		t.Errorf("Expected connect to fail.")
 	}
@@ -46,18 +40,16 @@ func TestConnectBadCredFile(t *testing.T) {
 func TestInvalidChannel(t *testing.T) {
 	s := Streamer{}
 
-	err := s.Connect(testURL, testCredFile)
+	err := s.Connect(testURL, testCredFile, "")
 	if err == nil {
 		t.Errorf("Expected connect to fail.")
 	}
 }
 
 func TestSendGameState(t *testing.T) {
-	s := Streamer{
-		chanName: "fixme" + t.Name(),
-	}
+	s := Streamer{}
 
-	err := s.Connect(testURL, testCredFile)
+	err := s.Connect(testURL, testCredFile, "fixme"+t.Name())
 	if err != nil {
 		t.Errorf("Connect failed. %q", err)
 		return
@@ -87,11 +79,9 @@ func TestSendGameState(t *testing.T) {
 }
 
 func TestSendMove(t *testing.T) {
-	s := Streamer{
-		chanName: "fixme" + t.Name(),
-	}
+	s := Streamer{}
 
-	err := s.Connect(testURL, testCredFile)
+	err := s.Connect(testURL, testCredFile, "fixme"+t.Name())
 	if err != nil {
 		t.Errorf("Connect failed. %q", err)
 		return
@@ -102,7 +92,7 @@ func TestSendMove(t *testing.T) {
 	gameInputCh <- engine.PlayInputRotate
 	game := <-gameUpdateCh
 
-	sentMove := engine.PlayInputMoveRight
+	sentMove := byte(engine.PlayInputMoveRight)
 	go func() {
 		s.SendMove(sentMove, *game)
 	}()

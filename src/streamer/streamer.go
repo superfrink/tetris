@@ -19,7 +19,7 @@ const (
 type Message struct {
 	Type MessageType
 	Game engine.Game
-	Move int
+	Move byte
 }
 
 // Streamer FIXME
@@ -32,8 +32,10 @@ type Streamer struct {
 }
 
 // Connect FIXME
-func (s *Streamer) Connect(url string, credFile string) error {
+func (s *Streamer) Connect(url string, credFile string, streamName string) error {
 	var err error
+
+	s.chanName = streamName
 
 	if s.chanName == "" {
 		err = errors.New("invalid channel name")
@@ -74,7 +76,7 @@ func (s *Streamer) SendGameState(game engine.Game) {
 }
 
 // SendMove FIXME
-func (s *Streamer) SendMove(move int, game engine.Game) {
+func (s *Streamer) SendMove(move byte, game engine.Game) {
 
 	m := Message{
 		Type: Move,
