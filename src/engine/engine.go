@@ -597,9 +597,9 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 					switch g.State {
 					case StateRunning:
 						g.State = StatePaused
-						key := <- player_input
+						key := <-player_input
 						for key != PlayInputPause {
-							key = <- player_input
+							key = <-player_input
 						}
 						g.State = StateRunning
 						ticker.Reset(tickDuration)
