@@ -15,6 +15,8 @@ jobs:
         working-directory: ./src
         run: |
           echo "${NATS_TEST_CREDS}" > NGS-Default-CLI.creds
+	  pwd
+	  ls -l
           go test -race -coverprofile=coverage.out -covermode=atomic ./...
           env:
             NATS_TEST_CREDS : ${{secrets.NATS_TEST_CREDS}}
