@@ -148,6 +148,7 @@ func main() {
 		}
 	}()
 
+	// GOAL: Play the game viewer if requested
 	if *viewStream {
 		display.TBPrint(21, 0, "q = quit")
 		display.Flush()
@@ -166,6 +167,8 @@ func main() {
 			}
 		}
 	}
+
+	// CLAIM: Game viewer not requested so play the game instead
 
 	// GOAL: Setup the keystroke legend
 	display.TBPrint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
