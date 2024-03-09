@@ -150,6 +150,7 @@ func main() {
 
 	if *viewStream {
 		display.TBPrint(21, 0, "q = quit")
+		display.Flush()
 
 		for {
 			select {
@@ -163,16 +164,13 @@ func main() {
 					drawGameState(message.Game)
 				}
 			}
-
-			// GOAL: Update the screen
-			display.Flush()
 		}
 	}
 
 	// GOAL: Setup the keystroke legend
 	display.TBPrint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
-
 	display.Flush()
+
 	// GOAL: Create an instance of the game
 	var gameState *engine.Game
 	var gameUserInputChan chan<- byte
