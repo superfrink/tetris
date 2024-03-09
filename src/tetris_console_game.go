@@ -5,18 +5,67 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/nsf/termbox-go"
 	"superfrink.net/tetris/engine"
 	"superfrink.net/tetris/streamer"
 )
 
-// tbprint is based on from https://github.com/jjinux/gotetris/
-func tbprint(y int, x int, str string) {
+// DOC: Display wraps a mutex around termbox writes.
+type Display struct {
+	mu sync.Mutex
+}
+
+func (d *Display) Clear(a termbox.Attribute, b termbox.Attribute) {
+	d.mu.Lock()
+	termbox.Clear(a, b)
+	d.mu.Unlock()
+}
+
+func (d *Display) Close() {
+	d.mu.Lock()
+	termbox.Close()
+	d.mu.Unlock()
+}
+
+func (d *Display) Flush() {
+	d.mu.Lock()
+	termbox.Flush()
+	d.mu.Unlock()
+}
+
+func (d *Display) Init() error {
+	d.mu.Lock()
+	val := termbox.Init()
+	d.mu.Unlock()
+	return val
+}
+
+func (d *Display) PollEvent() termbox.Event {
+	val := termbox.PollEvent()
+	return val
+}
+
+func (d *Display) TBPrint(y int, x int, str string) {
+	d.mu.Lock()
+	// tbprint is based on from https://github.com/jjinux/gotetris/
 	for _, c := range str {
 		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorBlack)
 		x++
 	}
+	d.mu.Unlock()
+}
+
+var display Display
+
+func exitProgram() {
+	display.Close()
+	os.Exit(0)
+}
+
+func drawPressAnyKey() {
+	display.TBPrint(13, 17, "press any key")
 }
 
 func drawGameState(gameState engine.Game) {
@@ -24,9 +73,9 @@ func drawGameState(gameState engine.Game) {
 	for i := 0; i < gameState.GameRows+2; i++ {
 		for j := 0; j < gameState.GameColumns+2; j++ {
 			if 0 != gameState.Field[i][j] {
-				tbprint(i, j, "X")
+				display.TBPrint(i, j, "X")
 			} else {
-				tbprint(i, j, " ")
+				display.TBPrint(i, j, " ")
 			}
 		}
 	}
@@ -35,22 +84,30 @@ func drawGameState(gameState engine.Game) {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			if 0 != gameState.PieceMap[gameState.Piece][gameState.PieceRotation][i][j] {
-				tbprint(gameState.PiecePosRow+i, gameState.PiecePosCol+j, "*")
+				display.TBPrint(gameState.PiecePosRow+i, gameState.PiecePosCol+j, "*")
 			}
 		}
 	}
 
 	// GOAL: Draw the score
-	tbprint(2, 15, fmt.Sprintf("Pieces: %d", gameState.ScorePieceCount))
-	tbprint(3, 15, fmt.Sprintf("Lines:  %d", gameState.ScoreLineCount))
+	display.TBPrint(2, 15, fmt.Sprintf("Pieces: %d", gameState.ScorePieceCount))
+	display.TBPrint(3, 15, fmt.Sprintf("Lines:  %d", gameState.ScoreLineCount))
 
 	if true {
 		// FIXME: only show when debugging
-		tbprint(7, 15, fmt.Sprintf("Piece    : %2d", gameState.Piece))
-		tbprint(8, 15, fmt.Sprintf("Rotation : %2d", gameState.PieceRotation))
-		tbprint(9, 15, fmt.Sprintf("Piece row: %2d", gameState.PiecePosRow))
-		tbprint(10, 15, fmt.Sprintf("Piece col: %2d", gameState.PiecePosCol))
+		display.TBPrint(7, 15, fmt.Sprintf("Piece    : %2d", gameState.Piece))
+		display.TBPrint(8, 15, fmt.Sprintf("Rotation : %2d", gameState.PieceRotation))
+		display.TBPrint(9, 15, fmt.Sprintf("Piece row: %2d", gameState.PiecePosRow))
+		display.TBPrint(10, 15, fmt.Sprintf("Piece col: %2d", gameState.PiecePosCol))
 	}
+
+	// GOAL: Check if the game is over
+	if engine.StateGameOver == gameState.State {
+		display.TBPrint(12, 20, "GAME OVER")
+	}
+
+	// GOAL: Update the screen
+	display.Flush()
 }
 
 func main() {
@@ -71,20 +128,20 @@ func main() {
 	}
 
 	// GOAL: Setup the screen
-	err := termbox.Init()
+	err := display.Init()
 	if err != nil {
 		log.Fatal("init", err)
 	}
-	defer termbox.Close()
+	defer display.Close()
 
-	termbox.Clear(termbox.ColorBlack, termbox.ColorBlack)
+	display.Clear(termbox.ColorBlack, termbox.ColorBlack)
 
 	// GOAL: Create a channel for user input
 	localUserInputChan := make(chan rune)
 
 	go func() {
 		for {
-			event := termbox.PollEvent()
+			event := display.PollEvent()
 			if termbox.EventKey == event.Type {
 				localUserInputChan <- event.Ch
 			}
@@ -92,30 +149,30 @@ func main() {
 	}()
 
 	if *viewStream {
-		tbprint(21, 0, "q = quit")
+		display.TBPrint(21, 0, "q = quit")
 
 		for {
 			select {
 
 			case key := <-localUserInputChan:
 				if key == 'q' {
-					termbox.Close()
-					os.Exit(0)
+					exitProgram()
 				}
 			case message := <-streamMesgChan:
-				drawGameState(message.Game)
+				if message.Type == streamer.StateUpdate {
+					drawGameState(message.Game)
+				}
 			}
 
 			// GOAL: Update the screen
-			termbox.Flush()
+			display.Flush()
 		}
 	}
 
 	// GOAL: Setup the keystroke legend
-	// FIXME: It would be good to use variables for each key
-	tbprint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
+	display.TBPrint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
 
-	termbox.Flush()
+	display.Flush()
 	// GOAL: Create an instance of the game
 	var gameState *engine.Game
 	var gameUserInputChan chan<- byte
@@ -127,27 +184,23 @@ func main() {
 		_, gameUserInputChan, gameOutputChan = engine.NewGame()
 	}
 
-	// Wait until the game is ready
-	gameState = <-gameOutputChan
+	// Main game
 
-	// Main game loop
-	quit := false
-	var move byte
-mainloop:
-	for {
+	// GOAL: Send commands from keypresses to the game
+	go func(userInputChan chan rune, gameCommandChan chan<- byte, stream *streamer.Streamer) {
+		quit := 0
 
-		select {
-
-		case key := <-localUserInputChan:
+		for {
 			nop := false
 
-			if quit {
-				break mainloop
-			}
+			var move byte
+
+			key := <-localUserInputChan
 
 			switch key {
 			case 'q':
 				move = engine.PlayInputStop
+				quit++
 			case 'd':
 				move = engine.PlayInputDrop
 			case 'h':
@@ -166,56 +219,28 @@ mainloop:
 				gameUserInputChan <- move
 			}
 
-			if *streamGame {
-				stream.SendMove(move, *gameState)
-			}
+			// DOC: 2 goroutines would be using the same gameState variable
+			// if *streamGame {
+			// 	stream.SendMove(move, *gameState)
+			// }
 
-		case gameState = <-gameOutputChan:
-
-			// GOAL: Draw the game field
-			for i := 0; i < gameState.GameRows+2; i++ {
-				for j := 0; j < gameState.GameColumns+2; j++ {
-					if 0 != gameState.Field[i][j] {
-						tbprint(i, j, "X")
-					} else {
-						tbprint(i, j, " ")
-					}
-				}
-			}
-
-			// GOAL: Draw the piece in play
-			for i := 0; i < 4; i++ {
-				for j := 0; j < 4; j++ {
-					if 0 != gameState.PieceMap[gameState.Piece][gameState.PieceRotation][i][j] {
-						tbprint(gameState.PiecePosRow+i, gameState.PiecePosCol+j, "*")
-					}
-				}
-			}
-
-			// GOAL: Draw the score
-			tbprint(2, 15, fmt.Sprintf("Pieces: %d", gameState.ScorePieceCount))
-			tbprint(3, 15, fmt.Sprintf("Lines:  %d", gameState.ScoreLineCount))
-
-			if true {
-				// FIXME: only show when debugging
-				tbprint(7, 15, fmt.Sprintf("Piece    : %2d", gameState.Piece))
-				tbprint(8, 15, fmt.Sprintf("Rotation : %2d", gameState.PieceRotation))
-				tbprint(9, 15, fmt.Sprintf("Piece row: %2d", gameState.PiecePosRow))
-				tbprint(10, 15, fmt.Sprintf("Piece col: %2d", gameState.PiecePosCol))
-			}
-
-			if *streamGame {
-				stream.SendGameState(*gameState)
+			switch quit {
+			case 1:
+				drawPressAnyKey()
+			case 2:
+				exitProgram()
 			}
 		}
+	}(localUserInputChan, gameUserInputChan, &stream)
 
-		// GOAL: Check if the game is over
-		if gameState != nil && engine.StateGameOver == gameState.State {
-			tbprint(12, 20, "GAME OVER")
-			tbprint(13, 17, "press any key")
-			quit = true
+	// GOAL: Draw the game state updates to the screen
+	for {
+		gameState = <-gameOutputChan
+
+		drawGameState(*gameState)
+
+		if *streamGame {
+			stream.SendGameState(*gameState)
 		}
-		// GOAL: Update the screen
-		termbox.Flush()
 	}
 }
