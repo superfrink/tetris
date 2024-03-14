@@ -14,4 +14,4 @@ jobs:
         run: |
           go version && go build
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck -mode=binary tetris_console_game
+          govulncheck -mode=binary tetris
