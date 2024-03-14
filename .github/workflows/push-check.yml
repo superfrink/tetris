@@ -12,6 +12,6 @@ jobs:
       - name: build
         working-directory: ./src
         run: |
-          go version && go build -o tetris_console_game tetris_console_game.go
+          go version && go build
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck -mode=binary tetris_console_game
