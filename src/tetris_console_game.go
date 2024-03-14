@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/nsf/termbox-go"
 	"superfrink.net/tetris/engine"
@@ -12,6 +13,7 @@ import (
 )
 
 type MainState struct {
+	mu             sync.Mutex
 	display        Display               // for drawing the game
 	gameRoot       engine.Game           // instance of game engine
 	gameState      *engine.Game          // stores intermediate game state for rendering
@@ -42,17 +44,21 @@ func (m *MainState) startDisplayingRemoteGame(localUserInputChan chan rune) {
 
 func (m *MainState) startDisplayingLocalGame(gameOutputChan <-chan *engine.Game, streamGame bool) {
 	for {
-		m.gameState = <-gameOutputChan
+		state := <-gameOutputChan
+
+		m.mu.Lock()
+		m.gameState = state
 
 		drawGameState(*m.gameState)
 
 		if streamGame {
 			m.stream.SendGameState(*m.gameState)
 		}
+		m.mu.Unlock()
 	}
 }
 
-func (s *MainState) startKeypressInput(localUserInputChan chan rune, gameUserInputChan chan<- byte) {
+func (m *MainState) startKeypressInput(localUserInputChan chan rune, gameUserInputChan chan<- byte, streamGame bool) {
 	go func(localUserInputChan chan rune, gameCommandChan chan<- byte, stream *streamer.Streamer) {
 		quit := 0
 
@@ -85,10 +91,11 @@ func (s *MainState) startKeypressInput(localUserInputChan chan rune, gameUserInp
 				gameUserInputChan <- move
 			}
 
-			// DOC: 2 goroutines would be using the same gameState variable
-			// if *streamGame {
-			// 	stream.SendMove(move, *gameState)
-			// }
+			if streamGame {
+				m.mu.Lock()
+				stream.SendMove(move, *m.gameState)
+				m.mu.Unlock()
+			}
 
 			switch quit {
 			case 1:
@@ -145,6 +152,9 @@ func drawGameState(gameState engine.Game) {
 	// GOAL: Check if the game is over
 	if engine.StateGameOver == gameState.State {
 		mainState.display.TBPrint(12, 20, "GAME OVER")
+	} else {
+		// DOC: The stream-viewing display experiences this when a new game is started.
+		mainState.display.TBPrint(12, 20, "         ")
 	}
 
 	// GOAL: Update the screen
@@ -207,7 +217,7 @@ func main() {
 	// Main game
 
 	// GOAL: Send commands from keypresses to the game
-	mainState.startKeypressInput(localUserInputChan, gameUserInputChan)
+	mainState.startKeypressInput(localUserInputChan, gameUserInputChan, *streamGame)
 
 	// GOAL: Setup the keystroke legend
 	mainState.display.TBPrint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
