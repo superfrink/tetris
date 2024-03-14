@@ -43,7 +43,7 @@ func (d *Display) PollEvent() termbox.Event {
 
 func (d *Display) TBPrint(y int, x int, str string) {
 	d.mu.Lock()
-	// tbprint is based on from https://github.com/jjinux/gotetris/
+	// tbprint is based on https://github.com/jjinux/gotetris/
 	for _, c := range str {
 		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorBlack)
 		x++
