@@ -15,8 +15,9 @@ jobs:
           go-version: '1.21'
           check-latest: true
       - name: test
-        working-directory: ${{ matrix.dir }}
+        working-directory: .
         run: |
+          cd ${{ matrix.dir }}
           echo "${NATS_TEST_CREDS}" > NGS-Default-CLI.creds
           pwd
           ls -l
