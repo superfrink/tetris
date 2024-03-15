@@ -7,9 +7,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/nsf/termbox-go"
 	"superfrink.net/tetris/engine"
 	"superfrink.net/tetris/streamer"
+
+	"github.com/nsf/termbox-go"
 )
 
 type MainState struct {

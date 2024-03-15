@@ -9,7 +9,7 @@ To play the game use:
 
 Or build it via:
 
-```go build```
+```go build ./cmd/tetris_console_game```
 
 Screenshot:
 
