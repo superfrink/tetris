@@ -8,7 +8,7 @@ import (
 )
 
 var testURL = "connect.ngs.global"
-var testCredFile = "../NGS-Default-CLI.creds"
+var testCredFile = "NGS-Default-CLI.creds"
 
 func TestConnect(t *testing.T) {
 	s := Streamer{}
