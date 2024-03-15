@@ -25,8 +25,7 @@ jobs:
           NATS_TEST_CREDS: ${{secrets.NATS_TEST_CREDS}}
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
-        working-directory: ${{ matrix.dir }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.out
+          files: ${{ matrix.dir }}/coverage.out
           slug: superfrink/tetris
