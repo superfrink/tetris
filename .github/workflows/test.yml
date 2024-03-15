@@ -3,6 +3,7 @@ on: [push, pull_request]
 jobs:
   test:
     strategy:
+      max-parallel: 1
       matrix:
         dir: [. , engine , streamer]
     runs-on: ubuntu-latest
