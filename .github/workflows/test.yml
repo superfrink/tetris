@@ -2,6 +2,10 @@ name: tetris
 on: [push, pull_request]
 jobs:
   test:
+    strategy:
+      max-parallel: 1
+      matrix:
+        dir: [. , engine , streamer]
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -12,12 +16,18 @@ jobs:
           go-version: '1.21'
           check-latest: true
       - name: test
-        working-directory: ./src
+        working-directory: .
         run: |
-          go test -race -race -coverprofile=coverage.out -covermode=atomic ./...
+          cd ${{ matrix.dir }}
+          echo "${NATS_TEST_CREDS}" > NGS-Default-CLI.creds
+          pwd
+          ls -l
+          go test -race -coverprofile=coverage.out -covermode=atomic ./...
+        env:
+          NATS_TEST_CREDS: ${{secrets.NATS_TEST_CREDS}}
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./src/coverage.out
+          files: ${{ matrix.dir }}/coverage.out
           slug: superfrink/tetris

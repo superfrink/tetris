@@ -311,7 +311,7 @@ func NewBucketGame() (*Game, chan<- byte, <-chan *Game) {
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][][][]int) (*Game, chan<- byte, <-chan *Game) {
+func NewSeededGame(seed int64, rows int, cols int, numPieces int, pieceMap [][][][]int) (*Game, chan<- byte, <-chan *Game) {
 	g := Game{
 		Seed:          seed,
 		State:         StateInitializing,
@@ -322,8 +322,8 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 	}
 	g.GameRows = rows
 	g.GameColumns = cols
-	g.NumberPossiblePieces = num_pieces
-	g.PieceMap = piece_map
+	g.NumberPossiblePieces = numPieces
+	g.PieceMap = pieceMap
 
 	g.Field = make([][]int, g.GameRows+2)
 	for i := range g.Field {
@@ -346,12 +346,12 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 		}
 	}
 
-	player_input_channel := make(chan byte, 5)
-	output_state_channel := make(chan *Game, 5)
+	playerInputChan := make(chan byte, 5)
+	outputStateChan := make(chan *Game, 5)
 
 	// GOAL: Start the main game loop
-	g.MainGameLoop(player_input_channel, output_state_channel)
-	return &g, player_input_channel, output_state_channel
+	g.MainGameLoop(playerInputChan, outputStateChan)
+	return &g, playerInputChan, outputStateChan
 }
 
 // CopyOfState returns a copy of the game's current state that is readable
@@ -365,7 +365,7 @@ func NewSeededGame(seed int64, rows int, cols int, num_pieces int, piece_map [][
 //   - The PRNG is not usable so the copy is not a playable game.
 func (g *Game) CopyOfState() *Game {
 
-	new_copy := Game{
+	newCopy := Game{
 		Seed:                 g.Seed,
 		State:                g.State,
 		PRNG:                 nil,
@@ -382,15 +382,15 @@ func (g *Game) CopyOfState() *Game {
 		PieceMap:             g.PieceMap,
 	}
 
-	new_copy.Field = make([][]int, g.GameRows+2)
-	for i := range new_copy.Field {
-		new_copy.Field[i] = make([]int, g.GameColumns+2)
+	newCopy.Field = make([][]int, g.GameRows+2)
+	for i := range newCopy.Field {
+		newCopy.Field[i] = make([]int, g.GameColumns+2)
 		for j := 0; j < g.GameColumns+2; j++ {
-			new_copy.Field[i][j] = g.Field[i][j]
+			newCopy.Field[i][j] = g.Field[i][j]
 		}
 	}
 
-	return &new_copy
+	return &newCopy
 }
 
 func (g *Game) GetDebugState() string {
@@ -539,15 +539,15 @@ func (g *Game) clearCompletedRows() {
 
 	for i := 1; i < g.GameRows+1; i++ {
 
-		row_complete := true
+		rowComplete := true
 
 		for j := 1; j < g.GameColumns+1; j++ {
 			if 0 == g.Field[i][j] {
-				row_complete = false
+				rowComplete = false
 			}
 		}
 
-		if row_complete {
+		if rowComplete {
 
 			// GOAL: drop all rows above this one down one row.
 			g.ShiftRowsDown(i)
@@ -557,12 +557,12 @@ func (g *Game) clearCompletedRows() {
 	}
 }
 
-// ShiftRowsDown drops blocks down by one row, starting at the start_row.
+// ShiftRowsDown drops blocks down by one row, starting at the startRow.
 // Called by clearCompletedRows().
-func (g *Game) ShiftRowsDown(start_row int) {
-	// Shifts down all rows above the start_row.
+func (g *Game) ShiftRowsDown(startRow int) {
+	// Shifts down all rows above the startRow.
 
-	for i := start_row; 1 < i; i-- {
+	for i := startRow; 1 < i; i-- {
 		for j := 1; j < g.GameColumns+1; j++ {
 			g.Field[i][j] = g.Field[i-1][j]
 		}
@@ -570,9 +570,9 @@ func (g *Game) ShiftRowsDown(start_row int) {
 }
 
 // MainGameLoop provides the main game loop logic.
-// Reads player input from channel player_input.
-// Sends game state to channel game_state_ch.
-func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game) {
+// Reads player input from playerInputChan.
+// Sends game state to channel gameStateChan.
+func (g *Game) MainGameLoop(playerInputChan <-chan byte, gameStateChan chan<- *Game) {
 
 	// GOAL: Create a channel for a ticker to drop the pieces
 	tickDuration := time.Millisecond * 500 // FIXME: use a global/config for drop speed
@@ -585,11 +585,12 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 		g.State = StateRunning
 
 		for {
-			game_state_ch <- g.CopyOfState()
+			gameStateChan <- g.CopyOfState()
 			dropPiece = false
 
 			select {
-			case key = <-player_input:
+			case key = <-playerInputChan:
+				if g.State != StateGameOver {
 				switch key {
 				case PlayInputStop:
 					g.State = StateGameOver
@@ -597,9 +598,9 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 					switch g.State {
 					case StateRunning:
 						g.State = StatePaused
-						key := <- player_input
+						key := <-playerInputChan
 						for key != PlayInputPause {
-							key = <- player_input
+							key = <-playerInputChan
 						}
 						g.State = StateRunning
 						ticker.Reset(tickDuration)
@@ -621,6 +622,7 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 				case PlayInputToggleDrop:
 					dropEnabled = !dropEnabled
 				}
+			}
 
 			case <-ticker.C:
 				if dropEnabled && g.State == StateRunning {
@@ -630,8 +632,8 @@ func (g *Game) MainGameLoop(player_input <-chan byte, game_state_ch chan<- *Game
 
 			if dropPiece {
 				// Lower the piece and check if it collides.
-				able_to_lower := g.lowerPiece()
-				if !able_to_lower {
+				ableToLower := g.lowerPiece()
+				if !ableToLower {
 					g.placePiece()
 					g.clearCompletedRows()
 
