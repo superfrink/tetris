@@ -590,6 +590,7 @@ func (g *Game) MainGameLoop(playerInputChan <-chan byte, gameStateChan chan<- *G
 
 			select {
 			case key = <-playerInputChan:
+				if g.State != StateGameOver {
 				switch key {
 				case PlayInputStop:
 					g.State = StateGameOver
@@ -621,6 +622,7 @@ func (g *Game) MainGameLoop(playerInputChan <-chan byte, gameStateChan chan<- *G
 				case PlayInputToggleDrop:
 					dropEnabled = !dropEnabled
 				}
+			}
 
 			case <-ticker.C:
 				if dropEnabled && g.State == StateRunning {
