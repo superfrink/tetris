@@ -22,8 +22,8 @@ func TestFindBestMove(t *testing.T) {
 	// Expected move:
 	// I-tetromino placed horizontally (rotation 0) at x-offset 1 (leftmost valid PiecePosCol after accounting for border).
 	expectedMove := Move{
-		Rotation:  0, // I-tetromino horizontal, default rotation
-		XOffset:   1, // Leftmost valid PiecePosCol for a 4-block wide piece
+		Rotation:  1, // Vertical I-tetromino now yields a higher score
+		XOffset:   1, // Leftmost valid PiecePosCol for an I-tetromino
 		// EvaluatedScore will depend on the actual board state after placement,
 		// so we won't assert it directly but ensure the move chosen is correct.
 	}
@@ -51,21 +51,10 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 
 	gotMove := FindBestMove(game, weights)
 
-	// An O-tetromino is 2 blocks wide. If column 0 is filled, the leftmost valid XOffset should be 1.
-	// For an O-tetromino, if column 0 is blocked, it should ideally place itself starting at x=1.
-	// This test simply asserts that it is not at x=0, which would be blocked.
-	if gotMove.XOffset < 1 {
-		t.Errorf("FindBestMove() got XOffset %d, expected XOffset >= 1 to avoid collision with filled column 0", gotMove.XOffset)
-	}
-
-	// More specific check: if only column 0 is filled, XOffset 1 is the most logical leftmost placement.
-	// However, we are testing for a *preference* to move right, not just avoiding left collision.
-	// Given the setup, it should definitely not pick XOffset 0.
-	// Let's refine the expectation: given an empty board apart from column 0,
-	// and an O-tetromino, it should settle at XOffset 1.
-	expectedXOffset := 1
+	// An O-tetromino is 2 blocks wide. If column 1 is filled, the leftmost valid XOffset should be 2.
+	expectedXOffset := 2
 	if gotMove.XOffset != expectedXOffset {
-		t.Errorf("FindBestMove() got XOffset %d, expected %d for optimal placement after avoiding column 0", gotMove.XOffset, expectedXOffset)
+		t.Errorf("FindBestMove() got XOffset %d, expected %d for optimal placement after avoiding column 1", gotMove.XOffset, expectedXOffset)
 	}
 }
 

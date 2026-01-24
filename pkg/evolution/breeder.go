@@ -1,6 +1,7 @@
 package evolution
 
 import (
+	"log/slog"
 	"math/rand"
 	"sort" // Import the sort package
 )
@@ -46,6 +47,8 @@ func (p *Population) Sort() {
 
 // Evolve creates the next generation of the population through elitism, crossover, and mutation.
 func Evolve(pop *Population, elitismFactor float64, mutationRate float64) *Population {
+	slog.Debug("Evolve", "populationSize", len(pop.Individuals), "elitismFactor", elitismFactor)
+
 	// Sort the current population by fitness (descending)
 	pop.Sort()
 

@@ -12,7 +12,7 @@ import (
 const (
 	PopulationSize     = 250
 	Generations        = 100
-	ElitismFactor      = 0.05 // Top N% individuals are carried over
+	ElitismFactor      = 0.0 // Top N% individuals are carried over
 	MutationRate       = 0.20 // 0.05
 	CheckpointFrequency = 50 // Save checkpoint every N generations
 
@@ -113,7 +113,7 @@ func main() {
 					break
 				}
 			}
-			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 3)
+			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
 		}
 		// Calculate and print performance summary
 		bestFitness := 0

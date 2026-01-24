@@ -38,6 +38,11 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 		for {
 			movedGame := tempGame.CopyOfState() // Copy for this x-position evaluation
 
+			// If the piece is colliding in this x-position, break the loop
+			if movedGame.CheckCollision(movedGame.Piece, movedGame.PieceRotation, movedGame.PiecePosRow, movedGame.PiecePosCol) {
+				break
+			}
+
 			// Drop the piece
 			finalGame := movedGame.CopyOfState()
 			for {
@@ -45,6 +50,7 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 					break // Piece can't move down further
 				}
 			}
+			finalGame.PlacePiece() // Place the piece after it has landed in simulation
 
 			// Evaluate this finalGame state
 			heuristics := fitter.CalculateHeuristics(finalGame.Field)

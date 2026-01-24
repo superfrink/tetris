@@ -503,7 +503,7 @@ func (g *Game) LowerPiece() bool {
 }
 
 // placePiece updates the field to place each block from the piece onto the play field.
-func (g *Game) placePiece() {
+func (g *Game) PlacePiece() {
 
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -595,7 +595,7 @@ func (g *Game) Step(input byte) {
 		// Lower the piece and check if it collides.
 		ableToLower := g.LowerPiece()
 		if !ableToLower {
-			g.placePiece()
+			g.PlacePiece()
 			g.clearCompletedRows()
 
 			g.nextPiece()
