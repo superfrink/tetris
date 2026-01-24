@@ -12,8 +12,8 @@ import (
 const (
 	PopulationSize     = 250
 	Generations        = 100
-	ElitismFactor      = 0.0 // Top N% individuals are carried over
-	MutationRate       = 0.20 // 0.05
+	ElitismFactor      = 0.05 // Top N% individuals are carried over
+	MutationRate       = 0.05 // 0.20 // 0.05
 	CheckpointFrequency = 50 // Save checkpoint every N generations
 
 	GenomeLength = 3 // AggregateHeight, Holes, Bumpiness
