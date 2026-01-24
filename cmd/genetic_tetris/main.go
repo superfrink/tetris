@@ -11,10 +11,10 @@ import (
 
 const (
 	PopulationSize     = 100
-	Generations        = 1000
-	ElitismFactor      = 0.1 // Top 10% individuals are carried over
-	MutationRate       = 0.05
-	CheckpointFrequency = 10 // Save checkpoint every 10 generations
+	Generations        = 100
+	ElitismFactor      = 0.15 // Top N% individuals are carried over
+	MutationRate       = 0.10 // 0.05
+	CheckpointFrequency = 50 // Save checkpoint every N generations
 
 	GenomeLength = 3 // AggregateHeight, Holes, Bumpiness
 
@@ -75,7 +75,7 @@ func main() {
 	fmt.Printf("Playing %d games per generation.\n", PopulationSize)
 
 	for gen := pop.Generation; gen < Generations; gen++ {
-		fmt.Printf("Generation %d:\n", gen)
+		fmt.Printf("Generation %d: ", gen)
 
 		for _, individual := range pop.Individuals {
 			game := engine.NewGame() // Start a new headless game for each individual
@@ -98,7 +98,7 @@ func main() {
 				// Check for errors during game step (though current Step doesn't return error)
 				// If Step were to return an error, it would be handled here.
 			}
-			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
+			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 3)
 		}
 		// Calculate and print performance summary
 		bestFitness := 0
