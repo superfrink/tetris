@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"superfrink.net/tetris/engine"
 	"superfrink.net/tetris/streamer"
@@ -16,7 +17,6 @@ import (
 type MainState struct {
 	mu             sync.Mutex
 	display        Display               // for drawing the game
-	gameRoot       engine.Game           // instance of game engine
 	gameState      *engine.Game          // stores intermediate game state for rendering
 	stream         streamer.Streamer     // NATS streamer
 	streamMesgChan chan streamer.Message // messages from streamer
@@ -41,71 +41,6 @@ func (m *MainState) startDisplayingRemoteGame(localUserInputChan chan rune) {
 			}
 		}
 	}
-}
-
-func (m *MainState) startDisplayingLocalGame(gameOutputChan <-chan *engine.Game, streamGame bool) {
-	for {
-		state := <-gameOutputChan
-
-		m.mu.Lock()
-		m.gameState = state
-
-		drawGameState(*m.gameState)
-
-		if streamGame {
-			m.stream.SendGameState(*m.gameState)
-		}
-		m.mu.Unlock()
-	}
-}
-
-func (m *MainState) startKeypressInput(localUserInputChan chan rune, gameUserInputChan chan<- byte, streamGame bool) {
-	go func(localUserInputChan chan rune, gameCommandChan chan<- byte, stream *streamer.Streamer) {
-		quit := 0
-
-		for {
-			nop := false
-
-			var move byte
-
-			key := <-localUserInputChan
-
-			switch key {
-			case 'q':
-				move = engine.PlayInputStop
-				quit++
-			case 'd':
-				move = engine.PlayInputDrop
-			case 'h':
-				move = engine.PlayInputMoveLeft
-			case 'l':
-				move = engine.PlayInputMoveRight
-			case 'p':
-				move = engine.PlayInputPause
-			case 'r':
-				move = engine.PlayInputRotate
-			default:
-				nop = true
-			}
-
-			if !nop {
-				gameUserInputChan <- move
-			}
-
-			if streamGame {
-				m.mu.Lock()
-				stream.SendMove(move, *m.gameState)
-				m.mu.Unlock()
-			}
-
-			switch quit {
-			case 1:
-				drawPressAnyKey()
-			case 2:
-				exitProgram()
-			}
-		}
-	}(localUserInputChan, gameUserInputChan, &mainState.stream)
 }
 
 func exitProgram() {
@@ -206,24 +141,72 @@ func main() {
 	// CLAIM: Game viewer not requested so play the game instead
 
 	// GOAL: Create an instance of the game
-	var gameUserInputChan chan<- byte
-	var gameOutputChan <-chan *engine.Game
-
 	if *flagBucketgame {
-		_, gameUserInputChan, gameOutputChan = engine.NewBucketGame()
+		mainState.gameState = engine.NewBucketGame()
 	} else {
-		_, gameUserInputChan, gameOutputChan = engine.NewGame()
+		mainState.gameState = engine.NewGame()
 	}
 
 	// Main game
-
-	// GOAL: Send commands from keypresses to the game
-	mainState.startKeypressInput(localUserInputChan, gameUserInputChan, *streamGame)
 
 	// GOAL: Setup the keystroke legend
 	mainState.display.TBPrint(21, 0, "q = quit\tr = rotate\th = left\tl = right\td = drop\tp = pause")
 	mainState.display.Flush()
 
-	// GOAL: Draw the game state updates to the screen
-	mainState.startDisplayingLocalGame(gameOutputChan, *streamGame)
+	// GOAL: start the game loop
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	quitCount := 0
+
+	for {
+		// Draw the initial state
+		drawGameState(*mainState.gameState)
+
+		select {
+		case key := <-localUserInputChan:
+			var move byte
+			nop := false
+			switch key {
+			case 'q':
+				quitCount++
+				if quitCount > 1 {
+					exitProgram()
+				}
+				drawPressAnyKey()
+				nop = true
+			case 'd':
+				move = engine.PlayInputDrop
+			case 'h':
+				move = engine.PlayInputMoveLeft
+			case 'l':
+				move = engine.PlayInputMoveRight
+			case 'p':
+				move = engine.PlayInputPause
+			case 'r':
+				move = engine.PlayInputRotate
+			default:
+				nop = true
+			}
+
+			if !nop {
+				mainState.gameState.Step(move)
+				if *streamGame {
+					mainState.stream.SendMove(move, *mainState.gameState)
+				}
+			}
+
+		case <-ticker.C:
+			mainState.gameState.Step(engine.PlayInputDrop)
+			if *streamGame {
+				mainState.stream.SendGameState(*mainState.gameState)
+			}
+		}
+
+		if mainState.gameState.State == engine.StateGameOver {
+			// let the loop run one more time to draw the game over message
+			<-localUserInputChan
+			exitProgram()
+		}
+	}
 }

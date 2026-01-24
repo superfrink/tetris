@@ -285,7 +285,7 @@ var DefaultBucketPieceMap = [][][][]int{
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewGame() (*Game, chan<- byte, <-chan *Game) {
+func NewGame() *Game {
 
 	seed := time.Now().UTC().UnixNano()
 
@@ -297,7 +297,7 @@ func NewGame() (*Game, chan<- byte, <-chan *Game) {
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewBucketGame() (*Game, chan<- byte, <-chan *Game) {
+func NewBucketGame() *Game {
 
 	seed := time.Now().UTC().UnixNano()
 
@@ -311,7 +311,7 @@ func NewBucketGame() (*Game, chan<- byte, <-chan *Game) {
 // - A game struct for the new game
 // - The input channel that player moves will be read from
 // - An output channel that will be sent each state change
-func NewSeededGame(seed int64, rows int, cols int, numPieces int, pieceMap [][][][]int) (*Game, chan<- byte, <-chan *Game) {
+func NewSeededGame(seed int64, rows int, cols int, numPieces int, pieceMap [][][][]int) *Game {
 	g := Game{
 		Seed:          seed,
 		State:         StateInitializing,
@@ -346,12 +346,9 @@ func NewSeededGame(seed int64, rows int, cols int, numPieces int, pieceMap [][][
 		}
 	}
 
-	playerInputChan := make(chan byte, 5)
-	outputStateChan := make(chan *Game, 5)
+	g.State = StateRunning
 
-	// GOAL: Start the main game loop
-	g.MainGameLoop(playerInputChan, outputStateChan)
-	return &g, playerInputChan, outputStateChan
+	return &g
 }
 
 // CopyOfState returns a copy of the game's current state that is readable
@@ -569,85 +566,52 @@ func (g *Game) ShiftRowsDown(startRow int) {
 	}
 }
 
-// MainGameLoop provides the main game loop logic.
-// Reads player input from playerInputChan.
-// Sends game state to channel gameStateChan.
-func (g *Game) MainGameLoop(playerInputChan <-chan byte, gameStateChan chan<- *Game) {
+// Step advances the game state by one step, processing the given input.
+func (g *Game) Step(input byte) {
+	if g.State != StateRunning {
+		return
+	}
 
-	// GOAL: Create a channel for a ticker to drop the pieces
-	tickDuration := time.Millisecond * 500 // FIXME: use a global/config for drop speed
-	ticker := time.NewTicker(tickDuration)
+	dropPiece := false
 
-	var key byte
-	go func() {
-		dropPiece := false
-		dropEnabled := true
-		g.State = StateRunning
+	switch input {
+	case PlayInputStop:
+		g.State = StateGameOver
+	case PlayInputPause:
+		// Pause is handled by the caller by not calling Step
+	case PlayInputMoveLeft:
+		g.moveLeft()
+	case PlayInputMoveRight:
+		g.moveRight()
+	case PlayInputRotate:
+		g.rotate()
+	case PlayInputDrop:
+		dropPiece = true
+	case PlayInputToggleDrop:
+		// This was for debugging and can be handled by the caller
+	}
 
-		for {
-			gameStateChan <- g.CopyOfState()
-			dropPiece = false
+	if dropPiece {
+		// Lower the piece and check if it collides.
+		ableToLower := g.lowerPiece()
+		if !ableToLower {
+			g.placePiece()
+			g.clearCompletedRows()
 
-			select {
-			case key = <-playerInputChan:
-				if g.State != StateGameOver {
-				switch key {
-				case PlayInputStop:
+			// Check for game over condition
+			if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol) {
+				g.State = StateGameOver
+			}
+
+			if g.State != StateGameOver {
+				g.nextPiece()
+				// Check if the new piece immediately collides
+				if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol) {
 					g.State = StateGameOver
-				case PlayInputPause:
-					switch g.State {
-					case StateRunning:
-						g.State = StatePaused
-						key := <-playerInputChan
-						for key != PlayInputPause {
-							key = <-playerInputChan
-						}
-						g.State = StateRunning
-						ticker.Reset(tickDuration)
-					}
-				case PlayInputMoveLeft:
-					if g.State == StateRunning {
-						g.moveLeft()
-					}
-				case PlayInputMoveRight:
-					if g.State == StateRunning {
-						g.moveRight()
-					}
-				case PlayInputRotate:
-					if g.State == StateRunning {
-						g.rotate()
-					}
-				case PlayInputDrop:
-					dropPiece = true
-				case PlayInputToggleDrop:
-					dropEnabled = !dropEnabled
 				}
-			}
-
-			case <-ticker.C:
-				if dropEnabled && g.State == StateRunning {
-					dropPiece = true
-				}
-			}
-
-			if dropPiece {
-				// Lower the piece and check if it collides.
-				ableToLower := g.lowerPiece()
-				if !ableToLower {
-					g.placePiece()
-					g.clearCompletedRows()
-
-					if 1 == g.PiecePosRow {
-						// CLAIM: game over
-						g.State = StateGameOver
-					}
-					g.nextPiece()
-				}
-			}
-
-			if g.State == StateGameOver {
-				ticker.Stop()
 			}
 		}
-	}()
+	}
 }
+
+

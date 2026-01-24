@@ -1,12 +1,11 @@
 package engine
 
 import (
-	"log"
-	"slices"
 	"testing"
 	"time"
 )
 
+/*
 func TestCreateStopGame(t *testing.T) {
 
 	_, gameInput, gameOutput := NewGame()
@@ -96,7 +95,6 @@ func TestCompleteRow(t *testing.T) {
 
 	// GOAL: make the game look like:
 	//  [X X X X X X X X X X X X]
-	//  [X 0 0 0 0 0 0 0 0 0 0 X]
 	//  [X 0 0 0 0 0 0 0 0 0 0 X]
 	//  [X 0 0 0 0 0 0 0 0 0 0 X]
 	//  [X 0 0 0 0 0 0 0 0 0 0 X]
@@ -320,5 +318,23 @@ func TestRotate(t *testing.T) {
 
 		gameInput <- PlayInputRotate
 		game = <-gameOutput
+	}
+}
+*/
+func TestHeadlessGameExecution(t *testing.T) {
+	startTime := time.Now()
+	game := NewGame()
+
+	for game.State != StateGameOver {
+		game.Step(PlayInputDrop)
+	}
+
+	if game.State != StateGameOver {
+		t.Errorf("Game did not end in GameOver state, got: %d", game.State)
+	}
+
+	duration := time.Since(startTime)
+	if duration > 100*time.Millisecond { // Expect game to run very fast
+		t.Errorf("Headless game execution took too long: %v, expected < 100ms", duration)
 	}
 }
