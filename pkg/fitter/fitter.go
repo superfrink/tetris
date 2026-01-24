@@ -13,21 +13,22 @@ func CalculateHeuristics(board [][]int) Heuristics {
 
 	gameRows := len(board)
 	gameCols := len(board[0])
+	playfieldCols := gameCols - 2
 
 	// AggregateHeight calculation
-	for x := 0; x < gameCols; x++ {
-		for y := 0; y < gameRows; y++ {
+	for x := 1; x <= playfieldCols; x++ {
+		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] != 0 {
-				h.AggregateHeight += (gameRows - y)
+				h.AggregateHeight += (gameRows - 1 - y)
 				break
 			}
 		}
 	}
 
 	// Holes calculation
-	for x := 0; x < gameCols; x++ {
+	for x := 1; x <= playfieldCols; x++ {
 		foundBlock := false
-		for y := 0; y < gameRows; y++ {
+		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] != 0 {
 				foundBlock = true
 			} else if foundBlock && board[y][x] == 0 {
@@ -37,16 +38,16 @@ func CalculateHeuristics(board [][]int) Heuristics {
 	}
 	// Bumpiness calculation
 	columnHeights := make([]int, gameCols)
-	for x := 0; x < gameCols; x++ {
-		for y := 0; y < gameRows; y++ {
+	for x := 1; x <= playfieldCols; x++ {
+		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] != 0 {
-				columnHeights[x] = gameRows - y
+				columnHeights[x] = gameRows - 1 - y
 				break
 			}
 		}
 	}
 
-	for x := 0; x < gameCols-1; x++ {
+	for x := 1; x < playfieldCols; x++ {
 		diff := columnHeights[x] - columnHeights[x+1]
 		if diff < 0 {
 			diff = -diff
