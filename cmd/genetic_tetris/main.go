@@ -98,7 +98,7 @@ func main() {
 				// Check for errors during game step (though current Step doesn't return error)
 				// If Step were to return an error, it would be handled here.
 			}
-			individual.Fitness = game.ScoreLineCount
+			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
 		}
 		// Calculate and print performance summary
 		bestFitness := 0
