@@ -72,6 +72,8 @@ func main() {
 		pop = evolution.NewPopulation(PopulationSize, GenomeLength)
 	}
 
+	fmt.Printf("Playing %d games per generation.\n", PopulationSize)
+
 	for gen := pop.Generation; gen < Generations; gen++ {
 		fmt.Printf("Generation %d:\n", gen)
 

@@ -56,9 +56,9 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 
 			// Evaluate this finalGame state
 			heuristics := fitter.CalculateHeuristics(finalGame.Field)
-			currentScore := weights[0]*float64(heuristics.AggregateHeight) +
+			currentScore := -(weights[0]*float64(heuristics.AggregateHeight) +
 				weights[1]*float64(heuristics.Holes) +
-				weights[2]*float64(heuristics.Bumpiness)
+				weights[2]*float64(heuristics.Bumpiness))
 
 			if currentScore > bestMove.EvaluatedScore {
 				bestMove.EvaluatedScore = currentScore
