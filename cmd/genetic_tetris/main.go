@@ -92,11 +92,26 @@ func main() {
 				// Set the x-position
 				game.PiecePosCol = move.XOffset
 
-				// Drop the piece
-				game.Step(engine.PlayInputDrop)
+				// Drop the piece until it lands
+				for {
+					// Remember the current piece ID and row before stepping
+					currentPiece := game.Piece
+					currentRow := game.PiecePosRow
 
-				// Check for errors during game step (though current Step doesn't return error)
-				// If Step were to return an error, it would be handled here.
+					game.Step(engine.PlayInputDrop)
+
+					// If the piece ID changed, a new piece has spawned, so the old one landed.
+					// Also break if the row didn't change, which can happen at the top of the board
+					// in a game over state before the piece ID changes.
+					if game.Piece != currentPiece || game.PiecePosRow == currentRow {
+						break
+					}
+				}
+
+				// Check for game over state after the piece has landed
+				if game.State == engine.StateGameOver {
+					break
+				}
 			}
 			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 3)
 		}
