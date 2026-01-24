@@ -18,10 +18,7 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 
 	for rot := 0; rot < 4; rot++ { // rot is the desired final rotation count (0 to 3)
 		rotatedGame := g.CopyOfState()
-		// Apply rotations
-		for i := 0; i < rot; i++ {
-			rotatedGame.RotatePiece()
-		}
+		rotatedGame.PieceRotation = rot
 
 		// If after desired rotations, the piece is in a colliding state, skip this rotation
 		if rotatedGame.CheckCollision(rotatedGame.Piece, rotatedGame.PieceRotation, rotatedGame.PiecePosRow, rotatedGame.PiecePosCol) {
