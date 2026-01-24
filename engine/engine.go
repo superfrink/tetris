@@ -446,7 +446,7 @@ func (g *Game) GetDebugState() string {
 // Returns:
 // - true if there is a collision
 // - false otherwise
-func pieceCollision(g *Game, piece int, rotation int, row int, col int) bool {
+func (g *Game) CheckCollision(piece int, rotation int, row int, col int) bool {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			if 0 != g.PieceMap[piece][rotation][i][j] {
@@ -461,39 +461,39 @@ func pieceCollision(g *Game, piece int, rotation int, row int, col int) bool {
 	return false
 }
 
-// rotate changes the rotation of the piece only if the rotation would not collide.
-func (g *Game) rotate() {
+// RotatePiece changes the rotation of the piece only if the rotation would not collide.
+func (g *Game) RotatePiece() {
 
-	if !pieceCollision(g, g.Piece, (g.PieceRotation+1)%4, g.PiecePosRow, g.PiecePosCol) {
+	if !g.CheckCollision(g.Piece, (g.PieceRotation+1)%4, g.PiecePosRow, g.PiecePosCol) {
 		g.PieceRotation = (g.PieceRotation + 1) % 4
 	}
 }
 
-// moveLeft move the position to the left only if the move would not collide.
-func (g *Game) moveLeft() {
-	if !pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol-1) {
+// MoveLeftPiece move the position to the left only if the move would not collide.
+func (g *Game) MoveLeftPiece() {
+	if !g.CheckCollision(g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol-1) {
 		g.PiecePosCol--
 	}
 }
 
-// moveRight move the position to the right only if the move would not collide.
-func (g *Game) moveRight() {
-	if !pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol+1) {
+// MoveRightPiece move the position to the right only if the move would not collide.
+func (g *Game) MoveRightPiece() {
+	if !g.CheckCollision(g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol+1) {
 		g.PiecePosCol++
 	}
 }
 
-// lowerPiece lowers the position by one step only if the move would not collide.
+// LowerPiece lowers the position by one step only if the move would not collide.
 // Returns:
 // - false if a collision would occur.
 // - true otherwise
-func (g *Game) lowerPiece() bool {
+func (g *Game) LowerPiece() bool {
 	// Returns false if unable to lower peice because of collision.
 	// Returns true otherwise.
 
 	// GOAL: lower the piece one step
 
-	if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow+1, g.PiecePosCol) {
+	if g.CheckCollision(g.Piece, g.PieceRotation, g.PiecePosRow+1, g.PiecePosCol) {
 		// CLAIM: Piece will collides if lowered.
 		return false
 	}
@@ -580,11 +580,11 @@ func (g *Game) Step(input byte) {
 	case PlayInputPause:
 		// Pause is handled by the caller by not calling Step
 	case PlayInputMoveLeft:
-		g.moveLeft()
+		g.MoveLeftPiece()
 	case PlayInputMoveRight:
-		g.moveRight()
+		g.MoveRightPiece()
 	case PlayInputRotate:
-		g.rotate()
+		g.RotatePiece()
 	case PlayInputDrop:
 		dropPiece = true
 	case PlayInputToggleDrop:
@@ -593,14 +593,14 @@ func (g *Game) Step(input byte) {
 
 	if dropPiece {
 		// Lower the piece and check if it collides.
-		ableToLower := g.lowerPiece()
+		ableToLower := g.LowerPiece()
 		if !ableToLower {
 			g.placePiece()
 			g.clearCompletedRows()
 
 			g.nextPiece()
 			// Check if the new piece immediately collides
-			if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol) {
+			if g.CheckCollision(g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol) {
 				g.State = StateGameOver
 			}
 		}

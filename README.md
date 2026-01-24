@@ -24,6 +24,27 @@ There is a ```-b``` flag to the ```tetris_console_game``` to play a simple bucke
 
 ![Bucket Game Screenshot](https://raw.githubusercontent.com/superfrink/tetris/master/doc/bucket-game-screenshot.png)
 
+![CodeQL](https://github.com/superfrink/tetris/workflows/CodeQL/badge.svg)
+
+Machine Learning
+================
+
+Training
+----------------
+
+To start training the machine learning model, run the following command:
+
+```
+go run cmd/genetic_tetris/main.go
+```
+
+To resume training from the last checkpoint, use the same command. The trainer will automatically load the `population_checkpoint.json` file if it exists and continue from there.
+
+Observing the AI
+----------------
+
+Currently, there is no command to watch the AI play a game in real-time. The training process runs headlessly for maximum performance.
+
 Build status
 ----------------
 
