@@ -27,12 +27,15 @@ func CalculateHeuristics(board [][]int) Heuristics {
 
 	// Holes calculation
 	for x := 1; x <= playfieldCols; x++ {
-		foundBlock := false
 		for y := 1; y < gameRows-1; y++ {
-			if board[y][x] != 0 {
-				foundBlock = true
-			} else if foundBlock && board[y][x] == 0 {
-				h.Holes++
+			if board[y][x] == 0 { // Found an empty cell
+				// Check for a block above it in the same column
+				for y_above := y - 1; y_above >= 1; y_above-- {
+					if board[y_above][x] != 0 {
+						h.Holes++
+						break // Found a block above, count it as a hole and move to the next empty cell
+					}
+				}
 			}
 		}
 	}
