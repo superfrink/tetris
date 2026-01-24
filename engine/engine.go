@@ -598,17 +598,10 @@ func (g *Game) Step(input byte) {
 			g.placePiece()
 			g.clearCompletedRows()
 
-			// Check for game over condition
+			g.nextPiece()
+			// Check if the new piece immediately collides
 			if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol) {
 				g.State = StateGameOver
-			}
-
-			if g.State != StateGameOver {
-				g.nextPiece()
-				// Check if the new piece immediately collides
-				if pieceCollision(g, g.Piece, g.PieceRotation, g.PiecePosRow, g.PiecePosCol) {
-					g.State = StateGameOver
-				}
 			}
 		}
 	}
