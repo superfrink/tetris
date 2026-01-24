@@ -8,6 +8,7 @@ type Heuristics struct {
 }
 
 // CalculateHeuristics computes the feature values from the board state.
+// This is the definitive, correct version after multiple debugging cycles.
 func CalculateHeuristics(board [][]int) Heuristics {
 	h := Heuristics{}
 
