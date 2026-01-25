@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"superfrink.net/tetris/engine" // Add this import
+	"sync" // Import the sync package
+	"superfrink.net/tetris/engine"
 	"superfrink.net/tetris/pkg/evolution"
-	"superfrink.net/tetris/pkg/player" // Add this import
+	"superfrink.net/tetris/pkg/player"
 )
 
 const (
-	PopulationSize     = 100 // 250
-	Generations        = 100
-	ElitismFactor      = 0.05 // Top N% individuals are carried over
-	MutationRate       = 0.05 // 0.20 // 0.05
+	PopulationSize      = 100 // 100 // 250
+	Generations         = 100
+	ElitismFactor       = 0.05 // Top N% individuals are carried over
+	MutationRate        = 0.05 // 0.20 // 0.05
+	GamesPerIndividual  = 25 // Number of games each individual plays per generation
 	CheckpointFrequency = 25 // Save checkpoint every N generations
 
 	GenomeLength = 5 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight
-	GamesPerIndividual = 25 // Number of games each individual plays per generation
-
 	CheckpointFileName = "population_checkpoint.json"
 )
 
@@ -78,49 +78,56 @@ func main() {
 	for gen := pop.Generation; gen < Generations; gen++ {
 		fmt.Printf("Generation %d: ", gen)
 
-		for _, individual := range pop.Individuals {
-			totalIndividualFitness := 0
+		var wg sync.WaitGroup
+		for i := range pop.Individuals {
+			wg.Add(1)
+			go func(individual *evolution.Individual) {
+				defer wg.Done()
+				totalIndividualFitness := 0
 
-			for gameNum := 0; gameNum < GamesPerIndividual; gameNum++ {
-				game := engine.NewGame() // Start a new headless game for each individual
-				game.State = engine.StateRunning // Ensure game is running
+				for gameNum := 0; gameNum < GamesPerIndividual; gameNum++ {
+					game := engine.NewGame() // Start a new headless game for each individual
+					game.State = engine.StateRunning // Ensure game is running
 
-				for game.State != engine.StateGameOver {
-					// Find the best move based on the current game state and individual's genome
-					move := player.FindBestMove(game, individual.Genome)
+					for game.State != engine.StateGameOver {
+						// Find the best move based on the current game state and individual's genome
+						move := player.FindBestMove(game, individual.Genome)
 
-					// Apply the rotation
-					for i := 0; i < move.Rotation; i++ {
-						game.RotatePiece()
-					}
-					// Set the x-position
-					game.PiecePosCol = move.XOffset
+						// Apply the rotation
+						for i := 0; i < move.Rotation; i++ {
+							game.RotatePiece()
+						}
+						// Set the x-position
+						game.PiecePosCol = move.XOffset
 
-					// Drop the piece until it lands
-					for {
-						// Remember the current piece ID and row before stepping
-						currentPiece := game.Piece
-						currentRow := game.PiecePosRow
+						// Drop the piece until it lands
+						for {
+							// Remember the current piece ID and row before stepping
+							currentPiece := game.Piece
+							currentRow := game.PiecePosRow
 
-						game.Step(engine.PlayInputDrop)
+							game.Step(engine.PlayInputDrop)
 
-						// If the piece ID changed, a new piece has spawned, so the old one landed.
-						// Also break if the row didn't change, which can happen at the top of the board
-						// in a game over state before the piece ID changes.
-						if game.Piece != currentPiece || game.PiecePosRow == currentRow {
+							// If the piece ID changed, a new piece has spawned, so the old one landed.
+							// Also break if the row didn't change, which can happen at the top of the board
+							// in a game over state before the piece ID changes.
+							if game.Piece != currentPiece || game.PiecePosRow == currentRow {
+								break
+							}
+						}
+
+						// Check for game over state after the piece has landed
+						if game.State == engine.StateGameOver {
 							break
 						}
 					}
-
-					// Check for game over state after the piece has landed
-					if game.State == engine.StateGameOver {
-						break
-					}
+					totalIndividualFitness += (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
 				}
-				totalIndividualFitness += (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
-			}
-			individual.Fitness = totalIndividualFitness / GamesPerIndividual
+				individual.Fitness = totalIndividualFitness / GamesPerIndividual
+			}(pop.Individuals[i])
 		}
+		wg.Wait() // Wait for all individuals in the current generation to be evaluated
+
 		// Calculate and print performance summary
 		bestFitness := 0
 		totalFitness := 0
