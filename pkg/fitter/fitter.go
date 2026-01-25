@@ -6,13 +6,15 @@ type Heuristics struct {
 	Holes           int
 	Bumpiness       int
 	LinesCleared    int
+	LandingHeight   int
 }
 
 // CalculateHeuristics computes the feature values from the board state.
 // This is the definitive, correct version after multiple debugging cycles.
-func CalculateHeuristics(board [][]int, linesCleared int) Heuristics {
+func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heuristics {
 	h := Heuristics{}
 	h.LinesCleared = linesCleared
+	h.LandingHeight = landingHeight
 
 	gameRows := len(board)
 	gameCols := len(board[0])

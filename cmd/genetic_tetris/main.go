@@ -16,7 +16,7 @@ const (
 	MutationRate       = 0.05 // 0.20 // 0.05
 	CheckpointFrequency = 25 // Save checkpoint every N generations
 
-	GenomeLength = 4 // AggregateHeight, Holes, Bumpiness, LinesCleared
+	GenomeLength = 5 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight
 
 	CheckpointFileName = "population_checkpoint.json"
 )

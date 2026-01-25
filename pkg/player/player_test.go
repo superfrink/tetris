@@ -16,8 +16,8 @@ func TestFindBestMove(t *testing.T) {
 	game.Piece = 0 // 0 corresponds to I_TETROMINO in DefaultPieceMap
 
 	// Define weights: high penalty for height, others neutral/low
-	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared
-	weights := []float64{-1.0, -0.1, -0.1, 0.0} // Strongly penalize height
+	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight
+	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0} // Strongly penalize height
 
 	// Expected move:
 	// I-tetromino placed horizontally (rotation 0) at x-offset 1 (leftmost valid PiecePosCol after accounting for border).
@@ -47,7 +47,7 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 	}
 
 	// Define weights: prioritize clearing lines and minimizing height
-	weights := []float64{-1.0, -0.1, -0.1, 0.0} // Strongly penalize height
+	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0} // Strongly penalize height
 
 	gotMove := FindBestMove(game, weights)
 
@@ -81,7 +81,7 @@ func TestFindBestMove_ClearsLine(t *testing.T) {
 	}
 
 	// Define weights: high bonus for LinesCleared, others neutral
-	weights := []float64{0.0, 0.0, 0.0, 100.0} // Huge bonus for clearing lines
+	weights := []float64{0.0, 0.0, 0.0, 100.0, 0.0} // Huge bonus for clearing lines
 
 	// An I-tetromino placed horizontally (rotation 0) at XOffset 6 (PiecePosCol 6)
 	// would clear row 19 (and potentially more depending on the exact setup).
@@ -96,6 +96,35 @@ func TestFindBestMove_ClearsLine(t *testing.T) {
 
 	if gotMove.Rotation != expectedMove.Rotation || gotMove.XOffset != expectedMove.XOffset {
 		t.Errorf("FindBestMove_ClearsLine() got move {Rotation: %d, XOffset: %d, Score: %f}, want {Rotation: %d, XOffset: %d}",
+			gotMove.Rotation, gotMove.XOffset, gotMove.EvaluatedScore, expectedMove.Rotation, expectedMove.XOffset)
+	}
+}
+
+func TestFindBestMove_LandingHeight(t *testing.T) {
+	// Scenario: An empty board, a straight piece (I-tetromino)
+	// Weights: Highly prioritize lower placement (higher PiecePosRow value).
+	game := engine.NewGame()
+	game.Piece = 0 // I-tetromino
+
+	// Define weights: high bonus for LandingHeight, others neutral
+	// Since PiecePosRow increases as the piece moves down, a positive weight
+	// for LandingHeight will reward lower placements.
+	weights := []float64{0.0, 0.0, 0.0, 0.0, 100.0} // Huge bonus for lower placement
+
+	// The I-tetromino can be placed at various XOffsets. On an empty board,
+	// all valid XOffsets would result in the same lowest possible PiecePosRow.
+	// We expect the piece to be placed at rotation 0 and the leftmost valid XOffset.
+	// The leftmost XOffset for an I-tetromino (4 blocks wide) in a 10-column board
+	// with borders would be 1.
+	expectedMove := Move{
+		Rotation: 0,
+		XOffset:  1,
+	}
+
+	gotMove := FindBestMove(game, weights)
+
+	if gotMove.Rotation != expectedMove.Rotation || gotMove.XOffset != expectedMove.XOffset {
+		t.Errorf("TestFindBestMove_LandingHeight() got move {Rotation: %d, XOffset: %d, Score: %f}, want {Rotation: %d, XOffset: %d}",
 			gotMove.Rotation, gotMove.XOffset, gotMove.EvaluatedScore, expectedMove.Rotation, expectedMove.XOffset)
 	}
 }
