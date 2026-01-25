@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	PopulationSize      = 25 // 100 // 250
+	PopulationSize      = 50 // 100 // 250
 	Generations         = 100
-	ElitismFactor       = 0.75 // Top N% individuals are carried over
-	MutationRate        = 0.05 // 0.20 // 0.05
-	GamesPerIndividual  = 15 // Number of games each individual plays per generation
-	CheckpointFrequency = 10 // Save checkpoint every N generations
+	ElitismFactor       = 0.85 // Top N% individuals are carried over
+	MutationRate        = 0.10 // 0.20 // 0.05
+	GamesPerIndividual  = 50 // Number of games each individual plays per generation
+	CheckpointFrequency = 5 // Save checkpoint every N generations
 
 	GenomeLength = 6 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs
 	CheckpointFileName = "population_checkpoint.json"
