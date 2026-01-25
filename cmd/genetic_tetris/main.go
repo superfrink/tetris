@@ -14,9 +14,9 @@ const (
 	Generations        = 100
 	ElitismFactor      = 0.05 // Top N% individuals are carried over
 	MutationRate       = 0.05 // 0.20 // 0.05
-	CheckpointFrequency = 50 // Save checkpoint every N generations
+	CheckpointFrequency = 25 // Save checkpoint every N generations
 
-	GenomeLength = 3 // AggregateHeight, Holes, Bumpiness
+	GenomeLength = 4 // AggregateHeight, Holes, Bumpiness, LinesCleared
 
 	CheckpointFileName = "population_checkpoint.json"
 )
