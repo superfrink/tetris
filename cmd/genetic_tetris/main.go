@@ -17,6 +17,7 @@ const (
 	CheckpointFrequency = 25 // Save checkpoint every N generations
 
 	GenomeLength = 5 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight
+	GamesPerIndividual = 25 // Number of games each individual plays per generation
 
 	CheckpointFileName = "population_checkpoint.json"
 )
@@ -72,48 +73,53 @@ func main() {
 		pop = evolution.NewPopulation(PopulationSize, GenomeLength)
 	}
 
-	fmt.Printf("Playing %d games per generation.\n", PopulationSize)
+	fmt.Printf("Playing %d games per individual per generation.\n", GamesPerIndividual)
 
 	for gen := pop.Generation; gen < Generations; gen++ {
 		fmt.Printf("Generation %d: ", gen)
 
 		for _, individual := range pop.Individuals {
-			game := engine.NewGame() // Start a new headless game for each individual
-			game.State = engine.StateRunning // Ensure game is running
+			totalIndividualFitness := 0
 
-			for game.State != engine.StateGameOver {
-				// Find the best move based on the current game state and individual's genome
-				move := player.FindBestMove(game, individual.Genome)
+			for gameNum := 0; gameNum < GamesPerIndividual; gameNum++ {
+				game := engine.NewGame() // Start a new headless game for each individual
+				game.State = engine.StateRunning // Ensure game is running
 
-				// Apply the rotation
-				for i := 0; i < move.Rotation; i++ {
-					game.RotatePiece()
-				}
-				// Set the x-position
-				game.PiecePosCol = move.XOffset
+				for game.State != engine.StateGameOver {
+					// Find the best move based on the current game state and individual's genome
+					move := player.FindBestMove(game, individual.Genome)
 
-				// Drop the piece until it lands
-				for {
-					// Remember the current piece ID and row before stepping
-					currentPiece := game.Piece
-					currentRow := game.PiecePosRow
+					// Apply the rotation
+					for i := 0; i < move.Rotation; i++ {
+						game.RotatePiece()
+					}
+					// Set the x-position
+					game.PiecePosCol = move.XOffset
 
-					game.Step(engine.PlayInputDrop)
+					// Drop the piece until it lands
+					for {
+						// Remember the current piece ID and row before stepping
+						currentPiece := game.Piece
+						currentRow := game.PiecePosRow
 
-					// If the piece ID changed, a new piece has spawned, so the old one landed.
-					// Also break if the row didn't change, which can happen at the top of the board
-					// in a game over state before the piece ID changes.
-					if game.Piece != currentPiece || game.PiecePosRow == currentRow {
+						game.Step(engine.PlayInputDrop)
+
+						// If the piece ID changed, a new piece has spawned, so the old one landed.
+						// Also break if the row didn't change, which can happen at the top of the board
+						// in a game over state before the piece ID changes.
+						if game.Piece != currentPiece || game.PiecePosRow == currentRow {
+							break
+						}
+					}
+
+					// Check for game over state after the piece has landed
+					if game.State == engine.StateGameOver {
 						break
 					}
 				}
-
-				// Check for game over state after the piece has landed
-				if game.State == engine.StateGameOver {
-					break
-				}
+				totalIndividualFitness += (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
 			}
-			individual.Fitness = (game.ScoreLineCount * 100) + (game.ScorePieceCount * 1)
+			individual.Fitness = totalIndividualFitness / GamesPerIndividual
 		}
 		// Calculate and print performance summary
 		bestFitness := 0
