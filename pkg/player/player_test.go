@@ -16,8 +16,8 @@ func TestFindBestMove(t *testing.T) {
 	game.Piece = 0 // 0 corresponds to I_TETROMINO in DefaultPieceMap
 
 	// Define weights: high penalty for height, others neutral/low
-	// These weights correspond to: AggregateHeight, Holes, Bumpiness
-	weights := []float64{-1.0, -0.1, -0.1} // Strongly penalize height
+	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared
+	weights := []float64{-1.0, -0.1, -0.1, 0.0} // Strongly penalize height
 
 	// Expected move:
 	// I-tetromino placed horizontally (rotation 0) at x-offset 1 (leftmost valid PiecePosCol after accounting for border).
@@ -47,7 +47,7 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 	}
 
 	// Define weights: prioritize clearing lines and minimizing height
-	weights := []float64{-1.0, -0.1, -0.1} // Strongly penalize height
+	weights := []float64{-1.0, -0.1, -0.1, 0.0} // Strongly penalize height
 
 	gotMove := FindBestMove(game, weights)
 
@@ -55,6 +55,48 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 	expectedXOffset := 2
 	if gotMove.XOffset != expectedXOffset {
 		t.Errorf("FindBestMove() got XOffset %d, expected %d for optimal placement after avoiding column 1", gotMove.XOffset, expectedXOffset)
+	}
+}
+
+func TestFindBestMove_ClearsLine(t *testing.T) {
+	// Scenario: A board configuration where placing a piece (I-tetromino) can clear a line.
+	// Weights: Highly prioritize LinesCleared.
+	game := engine.NewGame()
+	game.Piece = 0 // I-tetromino
+
+	// Create a board state that allows an I-tetromino (4 blocks wide) to clear a line.
+	// Fill most of the second to last row, leaving a gap for the I-tetromino.
+	// GameCols is 10, so playable columns are 1-10.
+	// We'll fill row 19 (last playable row) almost completely.
+	for c := 1; c <= game.GameColumns; c++ {
+		if c != 5 { // Leave a gap at column 5
+			game.Field[19][c] = 1
+		}
+	}
+	// Fill row 18 (second to last playable row) partially to create a line clear scenario
+	for c := 1; c <= game.GameColumns; c++ {
+		if c != 6 && c != 7 && c != 8 && c != 9 { // Leave gaps for the I-tetromino
+			game.Field[18][c] = 1
+		}
+	}
+
+	// Define weights: high bonus for LinesCleared, others neutral
+	weights := []float64{0.0, 0.0, 0.0, 100.0} // Huge bonus for clearing lines
+
+	// An I-tetromino placed horizontally (rotation 0) at XOffset 6 (PiecePosCol 6)
+	// would clear row 19 (and potentially more depending on the exact setup).
+	// If rotation is 0 and PiecePosCol is 6, it will occupy columns 6, 7, 8, 9.
+	// This would complete row 19 (which is missing 6,7,8,9)
+	expectedMove := Move{
+		Rotation:  0,
+		XOffset:   6,
+	}
+
+	gotMove := FindBestMove(game, weights)
+
+	if gotMove.Rotation != expectedMove.Rotation || gotMove.XOffset != expectedMove.XOffset {
+		t.Errorf("FindBestMove_ClearsLine() got move {Rotation: %d, XOffset: %d, Score: %f}, want {Rotation: %d, XOffset: %d}",
+			gotMove.Rotation, gotMove.XOffset, gotMove.EvaluatedScore, expectedMove.Rotation, expectedMove.XOffset)
 	}
 }
 

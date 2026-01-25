@@ -530,10 +530,11 @@ func (g *Game) nextPiece() {
 
 }
 
-// clearCompletedRows finds completed rows in the field, removes them, and drops
+// ClearCompletedRows finds completed rows in the field, removes them, and drops
 // above rows down.
-func (g *Game) clearCompletedRows() {
-
+// Returns the number of lines cleared.
+func (g *Game) ClearCompletedRows() int {
+	linesClearedThisMove := 0
 	for i := 1; i < g.GameRows+1; i++ {
 
 		rowComplete := true
@@ -541,17 +542,18 @@ func (g *Game) clearCompletedRows() {
 		for j := 1; j < g.GameColumns+1; j++ {
 			if 0 == g.Field[i][j] {
 				rowComplete = false
+				break
 			}
 		}
 
 		if rowComplete {
-
 			// GOAL: drop all rows above this one down one row.
 			g.ShiftRowsDown(i)
-
 			g.ScoreLineCount++
+			linesClearedThisMove++
 		}
 	}
+	return linesClearedThisMove
 }
 
 // ShiftRowsDown drops blocks down by one row, starting at the startRow.
@@ -596,7 +598,7 @@ func (g *Game) Step(input byte) {
 		ableToLower := g.LowerPiece()
 		if !ableToLower {
 			g.PlacePiece()
-			g.clearCompletedRows()
+			_ = g.ClearCompletedRows()
 
 			g.nextPiece()
 			// Check if the new piece immediately collides

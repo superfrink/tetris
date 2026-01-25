@@ -51,12 +51,14 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 				}
 			}
 			finalGame.PlacePiece() // Place the piece after it has landed in simulation
+			linesCleared := finalGame.ClearCompletedRows()
 
 			// Evaluate this finalGame state
-			heuristics := fitter.CalculateHeuristics(finalGame.Field)
+			heuristics := fitter.CalculateHeuristics(finalGame.Field, linesCleared)
 			currentScore := -(weights[0]*float64(heuristics.AggregateHeight) +
 				weights[1]*float64(heuristics.Holes) +
-				weights[2]*float64(heuristics.Bumpiness))
+				weights[2]*float64(heuristics.Bumpiness)) +
+				weights[3]*float64(heuristics.LinesCleared)
 
 			if currentScore > bestMove.EvaluatedScore {
 				bestMove.EvaluatedScore = currentScore

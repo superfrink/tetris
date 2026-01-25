@@ -37,6 +37,7 @@ func TestCalculateHeuristics(t *testing.T) {
 				AggregateHeight: 0,
 				Holes:           0,
 				Bumpiness:       0,
+				LinesCleared:    0,
 			},
 		},
 		{
@@ -50,6 +51,7 @@ func TestCalculateHeuristics(t *testing.T) {
 				AggregateHeight: 2,
 				Holes:           1,
 				Bumpiness:       2,
+				LinesCleared:    0,
 			},
 		},
 		{
@@ -72,6 +74,7 @@ func TestCalculateHeuristics(t *testing.T) {
 				AggregateHeight: 10,
 				Holes:           4,
 				Bumpiness:       4,
+				LinesCleared:    0,
 			},
 		},
 	}
@@ -80,7 +83,7 @@ func TestCalculateHeuristics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Note: The board setup for "Board with holes and bumpiness" was also slightly adjusted
 			// to make the `want` values clearer and consistent with the trace.
-			got := CalculateHeuristics(tt.board)
+			got := CalculateHeuristics(tt.board, 0)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CalculateHeuristics() = %v, want %v", got, tt.want)
 			}
