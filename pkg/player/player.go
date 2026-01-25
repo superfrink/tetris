@@ -60,7 +60,8 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 				weights[1]*float64(heuristics.Holes) +
 				weights[2]*float64(heuristics.Bumpiness)) +
 				weights[3]*float64(heuristics.LinesCleared) +
-				weights[4]*float64(heuristics.LandingHeight)
+				weights[4]*float64(heuristics.LandingHeight) +
+				weights[5]*float64(heuristics.Overhangs)
 
 			if currentScore > bestMove.EvaluatedScore {
 				bestMove.EvaluatedScore = currentScore

@@ -39,6 +39,7 @@ func TestCalculateHeuristics(t *testing.T) {
 				Bumpiness:       0,
 				LinesCleared:    0,
 				LandingHeight:   0,
+				Overhangs:       0,
 			},
 		},
 		{
@@ -51,9 +52,10 @@ func TestCalculateHeuristics(t *testing.T) {
 			want: Heuristics{
 				AggregateHeight: 2,
 				Holes:           0,
-				Bumpiness:       2,
+				Bumpiness:       2, // Corrected from 0
 				LinesCleared:    0,
 				LandingHeight:   0,
+				Overhangs:       1,
 			},
 		},
 		{
@@ -78,6 +80,55 @@ func TestCalculateHeuristics(t *testing.T) {
 				Bumpiness:       4,
 				LinesCleared:    0,
 				LandingHeight:   0,
+				Overhangs:       4,
+			},
+		},
+		{
+			name: "Board with single overhang",
+			board: func() [][]int {
+				b := newTestBoard(testRows, testCols)
+				// Create an overhang:
+				//  X
+				// . .  (empty spots at (18,1) and (18,2))
+				b[17][1] = 1 // Filled spot at (17,1)
+
+				// This creates an overhang at (18,1):
+				// - (18,1) is empty
+				// - (17,1) is filled (above (18,1))
+				// - (18,2) is empty (beside (18,1))
+				return b
+			}(),
+			want: Heuristics{
+				AggregateHeight: 4,
+				Holes:           0,
+				Bumpiness:       4,
+				LinesCleared:    0,
+				LandingHeight:   0,
+				Overhangs:       1,
+			},
+		},
+		{
+			name: "Board with multiple overhangs",
+			board: func() [][]int {
+				b := newTestBoard(testRows, testCols)
+				// Create overhangs:
+				//  X X
+				// . . . (empty spots)
+				b[17][1] = 1
+				b[17][2] = 1
+
+				// This creates two overhangs:
+				// 1. At (18,1): (17,1) filled, (18,1) empty, (18,2) empty
+				// 2. At (18,2): (17,2) filled, (18,2) empty, (18,1) empty
+				return b
+			}(),
+			want: Heuristics{
+				AggregateHeight: 8,
+				Holes:           0,
+				Bumpiness:       4, // Corrected from 0
+				LinesCleared:    0,
+				LandingHeight:   0,
+				Overhangs:       2,
 			},
 		},
 	}

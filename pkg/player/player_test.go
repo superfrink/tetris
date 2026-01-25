@@ -16,8 +16,8 @@ func TestFindBestMove(t *testing.T) {
 	game.Piece = 0 // 0 corresponds to I_TETROMINO in DefaultPieceMap
 
 	// Define weights: high penalty for height, others neutral/low
-	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight
-	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0} // Strongly penalize height
+	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs
+	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0} // Strongly penalize height
 
 	// Expected move:
 	// I-tetromino placed horizontally (rotation 0) at x-offset 1 (leftmost valid PiecePosCol after accounting for border).
@@ -47,7 +47,7 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 	}
 
 	// Define weights: prioritize clearing lines and minimizing height
-	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0} // Strongly penalize height
+	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0} // Strongly penalize height
 
 	gotMove := FindBestMove(game, weights)
 
@@ -81,7 +81,7 @@ func TestFindBestMove_ClearsLine(t *testing.T) {
 	}
 
 	// Define weights: high bonus for LinesCleared, others neutral
-	weights := []float64{0.0, 0.0, 0.0, 100.0, 0.0} // Huge bonus for clearing lines
+	weights := []float64{0.0, 0.0, 0.0, 100.0, 0.0, 0.0} // Huge bonus for clearing lines
 
 	// An I-tetromino placed horizontally (rotation 0) at XOffset 6 (PiecePosCol 6)
 	// would clear row 19 (and potentially more depending on the exact setup).
@@ -109,7 +109,7 @@ func TestFindBestMove_LandingHeight(t *testing.T) {
 	// Define weights: high bonus for LandingHeight, others neutral
 	// Since PiecePosRow increases as the piece moves down, a positive weight
 	// for LandingHeight will reward lower placements.
-	weights := []float64{0.0, 0.0, 0.0, 0.0, 100.0} // Huge bonus for lower placement
+	weights := []float64{0.0, 0.0, 0.0, 0.0, 100.0, 0.0} // Huge bonus for lower placement
 
 	// The I-tetromino can be placed at various XOffsets. On an empty board,
 	// all valid XOffsets would result in the same lowest possible PiecePosRow.

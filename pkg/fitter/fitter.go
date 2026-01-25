@@ -7,6 +7,7 @@ type Heuristics struct {
 	Bumpiness       int
 	LinesCleared    int
 	LandingHeight   int
+	Overhangs       int
 }
 
 // CalculateHeuristics computes the feature values from the board state.
@@ -68,6 +69,22 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 	// AggregateHeight calculation
 	for x := 1; x <= playfieldCols; x++ {
 		h.AggregateHeight += columnHeights[x]
+	}
+
+	// Overhangs calculation
+	for x := 1; x <= playfieldCols; x++ {
+		for y := 1; y < gameRows-1; y++ {
+			if board[y][x] == 0 { // Is an empty spot
+				if y > 1 && board[y-1][x] != 0 { // Has a filled spot directly above it (y>1 to avoid border)
+					// Check for an open spot beside it (left or right)
+					// x-1 > 0 ensures we are not checking the left border
+					// x+1 < gameCols-1 ensures we are not checking the right border
+					if (x > 1 && board[y][x-1] == 0) || (x < gameCols-1 && board[y][x+1] == 0) {
+						h.Overhangs++
+					}
+				}
+			}
+		}
 	}
 
 	return h
