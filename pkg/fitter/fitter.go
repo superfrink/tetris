@@ -43,12 +43,23 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 	for x := 1; x <= playfieldCols; x++ {
 		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] == 0 { // Found an empty cell
-				// Check for a block above it in the same column
+
+				hasBlockAbove := false
 				for y_above := y - 1; y_above >= 1; y_above-- {
 					if board[y_above][x] != 0 {
-						h.Holes++
-						break // Found a block above, count it as a hole and move to the next empty cell
+						hasBlockAbove = true
+						break
 					}
+				}
+
+				// Check for blocks on both sides within the playfield
+				// `x > 1` ensures `x-1` is not the left border
+				// `x < playfieldCols` ensures `x+1` is not the right border
+				hasBlockLeft := (x > 1 && board[y][x-1] != 0)
+				hasBlockRight := (x <= playfieldCols && board[y][x+1] != 0) // x <= playfieldCols ensures x+1 is not outside the playfield + border
+
+				if hasBlockAbove && hasBlockLeft && hasBlockRight {
+					h.Holes++
 				}
 			}
 		}

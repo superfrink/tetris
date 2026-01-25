@@ -50,7 +50,7 @@ func TestCalculateHeuristics(t *testing.T) {
 			}(),
 			want: Heuristics{
 				AggregateHeight: 2,
-				Holes:           1,
+				Holes:           0,
 				Bumpiness:       2,
 				LinesCleared:    0,
 				LandingHeight:   0,
@@ -74,7 +74,7 @@ func TestCalculateHeuristics(t *testing.T) {
 			}(),
 			want: Heuristics{
 				AggregateHeight: 10,
-				Holes:           4,
+				Holes:           0,
 				Bumpiness:       4,
 				LinesCleared:    0,
 				LandingHeight:   0,
