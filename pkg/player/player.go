@@ -52,7 +52,20 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 			}
 			finalGame.PlacePiece() // Place the piece after it has landed in simulation
 			linesCleared := finalGame.ClearCompletedRows()
-			landingHeight := finalGame.PiecePosRow
+
+			// Calculate landingHeight as the row of the lowest placed block in the piece
+			maxIRelativeOffset := 0
+			pieceMap := finalGame.PieceMap[finalGame.Piece][finalGame.PieceRotation]
+			for i := 0; i < 4; i++ {
+				for j := 0; j < 4; j++ {
+					if pieceMap[i][j] != 0 {
+						if i > maxIRelativeOffset {
+							maxIRelativeOffset = i
+						}
+					}
+				}
+			}
+			landingHeight := finalGame.PiecePosRow + maxIRelativeOffset
 
 			// Evaluate this finalGame state
 			heuristics := fitter.CalculateHeuristics(finalGame.Field, linesCleared, landingHeight)

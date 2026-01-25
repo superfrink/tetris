@@ -117,8 +117,8 @@ func TestFindBestMove_LandingHeight(t *testing.T) {
 	// The leftmost XOffset for an I-tetromino (4 blocks wide) in a 10-column board
 	// with borders would be 1.
 	expectedMove := Move{
-		Rotation: 0,
-		XOffset:  1,
+		Rotation: 0, // Horizontal I-tetromino for lowest block row (tie with vertical on empty board)
+		XOffset:  1, // Leftmost valid XOffset
 	}
 
 	gotMove := FindBestMove(game, weights)
