@@ -44,7 +44,6 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 	for x := 1; x <= playfieldCols; x++ {
 		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] == 0 { // Found an empty cell
-
 				hasBlockAbove := false
 				for y_above := y - 1; y_above >= 1; y_above-- {
 					if board[y_above][x] != 0 {
@@ -52,14 +51,7 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 						break
 					}
 				}
-
-				// Check for blocks on both sides within the playfield
-				// `x > 1` ensures `x-1` is not the left border
-				// `x < playfieldCols` ensures `x+1` is not the right border
-				hasBlockLeft := (x > 1 && board[y][x-1] != 0)
-				hasBlockRight := (x <= playfieldCols && board[y][x+1] != 0) // x <= playfieldCols ensures x+1 is not outside the playfield + border
-
-				if hasBlockAbove && hasBlockLeft && hasBlockRight {
+				if hasBlockAbove {
 					h.Holes++
 				}
 			}
@@ -75,11 +67,15 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 	for x := 1; x <= playfieldCols; x++ {
 		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] == 0 { // Is an empty spot
-				if y > 1 && board[y-1][x] != 0 { // Has a filled spot directly above it (y>1 to avoid border)
-					// Check for an open spot beside it (left or right)
-					// x > 1 ensures we are not checking the left border
-					// x < gameCols-1 ensures we are not checking the right border
-					if (x > 1 && board[y][x-1] == 0) || (x < gameCols-1 && board[y][x+1] == 0) {
+				hasBlockAbove := false
+				for y_above := y - 1; y_above >= 1; y_above-- {
+					if board[y_above][x] != 0 {
+						hasBlockAbove = true
+						break
+					}
+				}
+				if hasBlockAbove {
+					if (x > 1 && board[y][x-1] == 0) || (x < playfieldCols && board[y][x+1] == 0) {
 						h.Overhangs++
 					}
 				}

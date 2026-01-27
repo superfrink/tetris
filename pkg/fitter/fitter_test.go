@@ -51,11 +51,11 @@ func TestCalculateHeuristics(t *testing.T) {
 			}(),
 			want: Heuristics{
 				AggregateHeight: 2,
-				Holes:           0,
+				Holes:           1,
 				Bumpiness:       2,
 				LinesCleared:    0,
 				LandingHeight:   0,
-				Overhangs:       1, // Corrected to 1
+				Overhangs:       1,
 			},
 		},
 		{
@@ -76,7 +76,7 @@ func TestCalculateHeuristics(t *testing.T) {
 			}(),
 			want: Heuristics{
 				AggregateHeight: 10,
-				Holes:           0,
+				Holes:           4,
 				Bumpiness:       4,
 				LinesCleared:    0,
 				LandingHeight:   0,
@@ -96,15 +96,16 @@ func TestCalculateHeuristics(t *testing.T) {
 				// - (18,1) is empty
 				// - (17,1) is filled (above (18,1))
 				// - (18,2) is empty (beside (18,1))
+				// Also (19,1) is empty with block above and open side
 				return b
 			}(),
 			want: Heuristics{
 				AggregateHeight: 4,
-				Holes:           0,
+				Holes:           3,
 				Bumpiness:       4,
 				LinesCleared:    0,
 				LandingHeight:   0,
-				Overhangs:       1, // Corrected to 1
+				Overhangs:       3,
 			},
 		},
 		{
@@ -117,18 +118,17 @@ func TestCalculateHeuristics(t *testing.T) {
 				b[17][1] = 1
 				b[17][2] = 1
 
-				// This creates two overhangs:
-				// 1. At (18,1): (17,1) filled, (18,1) empty, (18,2) empty
-				// 2. At (18,2): (17,2) filled, (18,2) empty, (18,1) empty
+				// Holes: (18,1), (19,1), (18,2), (19,2) all have blocks above
+				// Overhangs: all 4 empty cells have blocks above and open sides
 				return b
 			}(),
 			want: Heuristics{
 				AggregateHeight: 8,
-				Holes:           0,
+				Holes:           6,
 				Bumpiness:       4,
 				LinesCleared:    0,
 				LandingHeight:   0,
-				Overhangs:       2,
+				Overhangs:       6,
 			},
 		},
 	}

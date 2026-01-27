@@ -15,7 +15,7 @@ const (
 	Generations         = 100
 	ElitismFactor       = 0.85 // Top N% individuals are carried over
 	MutationRate        = 0.10 // 0.20 // 0.05
-	GamesPerIndividual  = 50 // Number of games each individual plays per generation
+	GamesPerIndividual  = 100 // Number of games each individual plays per generation
 	CheckpointFrequency = 5 // Save checkpoint every N generations
 
 	GenomeLength = 6 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs
