@@ -65,7 +65,10 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 					}
 				}
 			}
-			landingHeight := finalGame.PiecePosRow + maxIRelativeOffset
+			// Convert row index to height from bottom (lower rows = higher height value)
+			gameRows := len(finalGame.Field)
+			landingRow := finalGame.PiecePosRow + maxIRelativeOffset
+			landingHeight := (gameRows - 2) - landingRow // -2 accounts for top and bottom border rows
 
 			// Evaluate this finalGame state
 			heuristics := fitter.CalculateHeuristics(finalGame.Field, linesCleared, landingHeight)

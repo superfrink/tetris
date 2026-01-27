@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PopulationSize      = 50 // 100 // 250
+	PopulationSize      = 25 // 100 // 250
 	Generations         = 100
 	ElitismFactor       = 0.85 // Top N% individuals are carried over
 	MutationRate        = 0.10 // 0.20 // 0.05
