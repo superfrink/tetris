@@ -34,12 +34,14 @@ func TestCalculateHeuristics(t *testing.T) {
 			name:  "Empty board",
 			board: newTestBoard(testRows, testCols),
 			want: Heuristics{
-				AggregateHeight: 0,
-				Holes:           0,
-				Bumpiness:       0,
-				LinesCleared:    0,
-				LandingHeight:   0,
-				Overhangs:       0,
+				AggregateHeight:   0,
+				Holes:             0,
+				Bumpiness:         0,
+				LinesCleared:      0,
+				LandingHeight:     0,
+				Overhangs:         0,
+				ColumnTransitions: 0,
+				RowTransitions:    0,
 			},
 		},
 		{
@@ -50,12 +52,14 @@ func TestCalculateHeuristics(t *testing.T) {
 				return b
 			}(),
 			want: Heuristics{
-				AggregateHeight: 2,
-				Holes:           1,
-				Bumpiness:       2,
-				LinesCleared:    0,
-				LandingHeight:   0,
-				Overhangs:       1,
+				AggregateHeight:   2,
+				Holes:             1,
+				Bumpiness:         2,
+				LinesCleared:      0,
+				LandingHeight:     0,
+				Overhangs:         1,
+				ColumnTransitions: 2, // empty→filled, filled→empty (border)
+				RowTransitions:    1, // filled→empty transition to col2
 			},
 		},
 		{
@@ -75,12 +79,14 @@ func TestCalculateHeuristics(t *testing.T) {
 				return b
 			}(),
 			want: Heuristics{
-				AggregateHeight: 10,
-				Holes:           4,
-				Bumpiness:       4,
-				LinesCleared:    0,
-				LandingHeight:   0,
-				Overhangs:       4,
+				AggregateHeight:   10,
+				Holes:             4,
+				Bumpiness:         4,
+				LinesCleared:      0,
+				LandingHeight:     0,
+				Overhangs:         4,
+				ColumnTransitions: 8, // col1: 1, col2: 3 (gap), col3: 2, etc.
+				RowTransitions:    3, // transitions across rows 17, 18, 19
 			},
 		},
 		{
@@ -100,12 +106,14 @@ func TestCalculateHeuristics(t *testing.T) {
 				return b
 			}(),
 			want: Heuristics{
-				AggregateHeight: 4,
-				Holes:           3,
-				Bumpiness:       4,
-				LinesCleared:    0,
-				LandingHeight:   0,
-				Overhangs:       3,
+				AggregateHeight:   4,
+				Holes:             3,
+				Bumpiness:         4,
+				LinesCleared:      0,
+				LandingHeight:     0,
+				Overhangs:         3,
+				ColumnTransitions: 2, // empty→filled→empty in col1
+				RowTransitions:    1, // transition in row 17
 			},
 		},
 		{
@@ -123,12 +131,14 @@ func TestCalculateHeuristics(t *testing.T) {
 				return b
 			}(),
 			want: Heuristics{
-				AggregateHeight: 8,
-				Holes:           6,
-				Bumpiness:       4,
-				LinesCleared:    0,
-				LandingHeight:   0,
-				Overhangs:       6,
+				AggregateHeight:   8,
+				Holes:             6,
+				Bumpiness:         4,
+				LinesCleared:      0,
+				LandingHeight:     0,
+				Overhangs:         6,
+				ColumnTransitions: 4, // 2 transitions per column (col1, col2)
+				RowTransitions:    1, // transition in row 17 (col2→col3)
 			},
 		},
 	}

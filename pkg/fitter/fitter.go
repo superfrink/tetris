@@ -2,12 +2,14 @@ package fitter
 
 // Heuristics holds the calculated values for a given board state.
 type Heuristics struct {
-	AggregateHeight int
-	Holes           int
-	Bumpiness       int
-	LinesCleared    int
-	LandingHeight   int
-	Overhangs       int
+	AggregateHeight   int
+	Holes             int
+	Bumpiness         int
+	LinesCleared      int
+	LandingHeight     int
+	Overhangs         int
+	ColumnTransitions int
+	RowTransitions    int
 }
 
 // CalculateHeuristics computes the feature values from the board state.
@@ -79,6 +81,30 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 						h.Overhangs++
 					}
 				}
+			}
+		}
+	}
+
+	// ColumnTransitions calculation
+	// Count vertical changes between empty and filled cells in each column
+	for x := 1; x <= playfieldCols; x++ {
+		for y := 2; y < gameRows-1; y++ {
+			previousCell := board[y-1][x]
+			currentCell := board[y][x]
+			if (previousCell == 0 && currentCell != 0) || (previousCell != 0 && currentCell == 0) {
+				h.ColumnTransitions++
+			}
+		}
+	}
+
+	// RowTransitions calculation
+	// Count horizontal changes between empty and filled cells in each row
+	for y := 1; y < gameRows-1; y++ {
+		for x := 2; x <= playfieldCols; x++ {
+			previousCell := board[y][x-1]
+			currentCell := board[y][x]
+			if (previousCell == 0 && currentCell != 0) || (previousCell != 0 && currentCell == 0) {
+				h.RowTransitions++
 			}
 		}
 	}
