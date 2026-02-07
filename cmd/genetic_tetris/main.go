@@ -24,7 +24,7 @@ const (
 	GamesPerIndividual  = 20 // Number of games each individual plays per generation
 	CheckpointFrequency = 10 // Save checkpoint every N generations
 
-	GenomeLength = 8 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs, ColumnTransitions, RowTransitions
+	GenomeLength = 9 // AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs, ColumnTransitions, RowTransitions, HoleDepth
 	CheckpointFileName = "population_checkpoint.json"
 )
 
@@ -93,10 +93,11 @@ func applyMaskToPopulation(pop *evolution.Population, weightMask []bool) {
 }
 
 func main() {
-	maskFlag := flag.String("mask", "11111111", "Weight mask: 8 characters of 0/1 indicating which weights are active.\n"+
+	maskFlag := flag.String("mask", "111111111", "Weight mask: 9 characters of 0/1 indicating which weights are active.\n"+
 		"Position 0 is the leftmost character.\n"+
 		"Positions: 0=AggregateHeight, 1=Holes, 2=Bumpiness, 3=LinesCleared,\n"+
-		"           4=LandingHeight, 5=Overhangs, 6=ColumnTransitions, 7=RowTransitions")
+		"           4=LandingHeight, 5=Overhangs, 6=ColumnTransitions, 7=RowTransitions,\n"+
+		"           8=HoleDepth")
 	flag.Parse()
 
 	weightMask, err := parseMask(*maskFlag)

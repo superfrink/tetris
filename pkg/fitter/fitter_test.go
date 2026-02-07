@@ -40,8 +40,9 @@ func TestCalculateHeuristics(t *testing.T) {
 				LinesCleared:      0,
 				LandingHeight:     0,
 				Overhangs:         0,
-				ColumnTransitions: 0,
-				RowTransitions:    0,
+				ColumnTransitions: 20,
+				RowTransitions:    40,
+				HoleDepth:         0,
 			},
 		},
 		{
@@ -58,8 +59,9 @@ func TestCalculateHeuristics(t *testing.T) {
 				LinesCleared:      0,
 				LandingHeight:     0,
 				Overhangs:         1,
-				ColumnTransitions: 2, // empty→filled, filled→empty (border)
-				RowTransitions:    1, // filled→empty transition to col2
+				ColumnTransitions: 22, // col1: 4 (border→empty→filled→empty→border), cols 2-10: 2 each = 18
+				RowTransitions:    40, // rows 1-18,20: 2 each (wall→empty→wall), row 19: 2 (wall→filled→empty→wall but filled touches wall)
+				HoleDepth:         1,
 			},
 		},
 		{
@@ -85,8 +87,9 @@ func TestCalculateHeuristics(t *testing.T) {
 				LinesCleared:      0,
 				LandingHeight:     0,
 				Overhangs:         4,
-				ColumnTransitions: 8, // col1: 1, col2: 3 (gap), col3: 2, etc.
-				RowTransitions:    3, // transitions across rows 17, 18, 19
+				ColumnTransitions: 28, // col1: 4, col2: 6 (gap), col3: 4, cols 4-10: 2 each = 14
+				RowTransitions:    40, // each row has 2 transitions (wall boundaries + fill patterns)
+				HoleDepth:         7,
 			},
 		},
 		{
@@ -112,8 +115,9 @@ func TestCalculateHeuristics(t *testing.T) {
 				LinesCleared:      0,
 				LandingHeight:     0,
 				Overhangs:         3,
-				ColumnTransitions: 2, // empty→filled→empty in col1
-				RowTransitions:    1, // transition in row 17
+				ColumnTransitions: 22, // col1: 4 (border→empty→filled→empty→border), cols 2-10: 2 each = 18
+				RowTransitions:    40, // each row has 2 transitions (wall boundaries)
+				HoleDepth:         3,
 			},
 		},
 		{
@@ -137,8 +141,9 @@ func TestCalculateHeuristics(t *testing.T) {
 				LinesCleared:      0,
 				LandingHeight:     0,
 				Overhangs:         6,
-				ColumnTransitions: 4, // 2 transitions per column (col1, col2)
-				RowTransitions:    1, // transition in row 17 (col2→col3)
+				ColumnTransitions: 24, // col1: 4, col2: 4, cols 3-10: 2 each = 16
+				RowTransitions:    40, // each row has 2 transitions (wall boundaries)
+				HoleDepth:         6,
 			},
 		},
 	}

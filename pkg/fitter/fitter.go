@@ -10,6 +10,7 @@ type Heuristics struct {
 	Overhangs         int
 	ColumnTransitions int
 	RowTransitions    int
+	HoleDepth         int
 }
 
 // CalculateHeuristics computes the feature values from the board state.
@@ -42,19 +43,19 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 		h.Bumpiness += diff
 	}
 
-	// Holes calculation
+	// Holes and HoleDepth calculation
 	for x := 1; x <= playfieldCols; x++ {
 		for y := 1; y < gameRows-1; y++ {
 			if board[y][x] == 0 { // Found an empty cell
-				hasBlockAbove := false
+				filledAbove := 0
 				for y_above := y - 1; y_above >= 1; y_above-- {
 					if board[y_above][x] != 0 {
-						hasBlockAbove = true
-						break
+						filledAbove++
 					}
 				}
-				if hasBlockAbove {
+				if filledAbove > 0 {
 					h.Holes++
+					h.HoleDepth += filledAbove
 				}
 			}
 		}
@@ -86,26 +87,33 @@ func CalculateHeuristics(board [][]int, linesCleared int, landingHeight int) Heu
 	}
 
 	// ColumnTransitions calculation
-	// Count vertical changes between empty and filled cells in each column
+	// Count vertical changes between empty and filled cells in each column,
+	// including transitions with top and bottom border rows.
 	for x := 1; x <= playfieldCols; x++ {
-		for y := 2; y < gameRows-1; y++ {
-			previousCell := board[y-1][x]
-			currentCell := board[y][x]
-			if (previousCell == 0 && currentCell != 0) || (previousCell != 0 && currentCell == 0) {
+		prev := board[0][x]
+		for y := 1; y <= gameRows-1; y++ {
+			cur := board[y][x]
+			if (prev == 0) != (cur == 0) {
 				h.ColumnTransitions++
 			}
+			prev = cur
 		}
 	}
 
 	// RowTransitions calculation
-	// Count horizontal changes between empty and filled cells in each row
+	// Count horizontal changes between empty and filled cells in each row,
+	// including transitions with left and right wall columns.
 	for y := 1; y < gameRows-1; y++ {
-		for x := 2; x <= playfieldCols; x++ {
-			previousCell := board[y][x-1]
-			currentCell := board[y][x]
-			if (previousCell == 0 && currentCell != 0) || (previousCell != 0 && currentCell == 0) {
+		prev := board[y][0]
+		for x := 1; x <= playfieldCols; x++ {
+			cur := board[y][x]
+			if (prev == 0) != (cur == 0) {
 				h.RowTransitions++
 			}
+			prev = cur
+		}
+		if (prev == 0) != (board[y][playfieldCols+1] == 0) {
+			h.RowTransitions++
 		}
 	}
 

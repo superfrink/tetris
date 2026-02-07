@@ -25,7 +25,7 @@ func NewPopulation(size int, genomeLength int) *Population {
 		genome := make([]float64, genomeLength)
 		for j := 0; j < genomeLength; j++ {
 			// Initialize weights in a reasonable range, e.g., -1.0 to 1.0
-			genome[j] = rand.Float64()
+			genome[j] = rand.Float64()*2 - 1
 		}
 		individuals[i] = &Individual{
 			Genome:  genome,
@@ -80,9 +80,6 @@ func Evolve(pop *Population, elitismFactor float64, mutationRate float64) *Popul
 		for i := range offspringGenome {
 			if rand.Float64() < mutationRate {
 				offspringGenome[i] += (rand.Float64()*2 - 1) * 0.2 // Small random change
-				if offspringGenome[i] < 0 {
-					offspringGenome[i] = 0
-				}
 			}
 		}
 

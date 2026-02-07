@@ -16,13 +16,13 @@ func TestFindBestMove(t *testing.T) {
 	game.Piece = 0 // 0 corresponds to I_TETROMINO in DefaultPieceMap
 
 	// Define weights: high penalty for height, others neutral/low
-	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs, ColumnTransitions, RowTransitions
-	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0, 0.0} // Strongly penalize height
+	// These weights correspond to: AggregateHeight, Holes, Bumpiness, LinesCleared, LandingHeight, Overhangs, ColumnTransitions, RowTransitions, HoleDepth
+	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0} // Strongly penalize height
 
 	// Expected move:
 	// I-tetromino placed horizontally (rotation 0) at x-offset 1 (leftmost valid PiecePosCol after accounting for border).
 	expectedMove := Move{
-		Rotation:  1, // Vertical I-tetromino now yields a higher score
+		Rotation:  0, // Horizontal I-tetromino scores better (lower bumpiness than vertical)
 		XOffset:   1, // Leftmost valid PiecePosCol for an I-tetromino
 		// EvaluatedScore will depend on the actual board state after placement,
 		// so we won't assert it directly but ensure the move chosen is correct.
@@ -47,12 +47,12 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 	}
 
 	// Define weights: prioritize clearing lines and minimizing height
-	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0, 0.0} // Strongly penalize height
+	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0} // Strongly penalize height
 
 	gotMove := FindBestMove(game, weights, nil)
 
-	// An O-tetromino is 2 blocks wide. If column 1 is filled, the leftmost valid XOffset should be 2.
-	expectedXOffset := 2
+	// O-piece has a leading empty column in its 4x4 map, so PiecePosCol=1 places blocks in columns 2 & 3.
+	expectedXOffset := 1
 	if gotMove.XOffset != expectedXOffset {
 		t.Errorf("FindBestMove() got XOffset %d, expected %d for optimal placement after avoiding column 1", gotMove.XOffset, expectedXOffset)
 	}
@@ -81,7 +81,7 @@ func TestFindBestMove_ClearsLine(t *testing.T) {
 	}
 
 	// Define weights: high bonus for LinesCleared, others neutral
-	weights := []float64{0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0} // Huge bonus for clearing lines
+	weights := []float64{0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0} // Huge bonus for clearing lines
 
 	// An I-tetromino placed horizontally (rotation 0) at XOffset 6 (PiecePosCol 6)
 	// would clear row 19 (and potentially more depending on the exact setup).
@@ -109,7 +109,7 @@ func TestFindBestMove_LandingHeight(t *testing.T) {
 	// Define weights: high bonus for LandingHeight, others neutral
 	// Since PiecePosRow increases as the piece moves down, a positive weight
 	// for LandingHeight will reward lower placements.
-	weights := []float64{0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0} // Huge bonus for lower placement
+	weights := []float64{0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0} // Huge bonus for lower placement
 
 	// The I-tetromino can be placed at various XOffsets. On an empty board,
 	// all valid XOffsets would result in the same lowest possible PiecePosRow.
@@ -135,9 +135,9 @@ func TestFindBestMove_WeightMask(t *testing.T) {
 
 	// With LinesCleared weight active (index 3), the AI should try to clear lines.
 	// With it masked out, it should behave as if that weight is zero.
-	weightsWithLines := []float64{0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0}
-	maskAllOn := []bool{true, true, true, true, true, true, true, true}
-	maskLinesClearedOff := []bool{true, true, true, false, true, true, true, true}
+	weightsWithLines := []float64{0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+	maskAllOn := []bool{true, true, true, true, true, true, true, true, true}
+	maskLinesClearedOff := []bool{true, true, true, false, true, true, true, true, true}
 
 	// Set up board where clearing a line matters
 	for c := 1; c <= game.GameColumns; c++ {
@@ -151,7 +151,7 @@ func TestFindBestMove_WeightMask(t *testing.T) {
 
 	// When mask disables LinesCleared, the effective weight is 0, so the move should
 	// be the same as if we passed all-zero weights.
-	allZeroWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+	allZeroWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 	moveAllZero := FindBestMove(game, allZeroWeights, nil)
 
 	if moveWithoutLines.Rotation != moveAllZero.Rotation || moveWithoutLines.XOffset != moveAllZero.XOffset {
