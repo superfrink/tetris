@@ -28,7 +28,7 @@ func TestFindBestMove(t *testing.T) {
 		// so we won't assert it directly but ensure the move chosen is correct.
 	}
 
-	gotMove := FindBestMove(game, weights)
+	gotMove := FindBestMove(game, weights, nil)
 
 	if gotMove.Rotation != expectedMove.Rotation || gotMove.XOffset != expectedMove.XOffset {
 		t.Errorf("FindBestMove() got move {Rotation: %d, XOffset: %d, Score: %f}, want {Rotation: %d, XOffset: %d}",
@@ -49,7 +49,7 @@ func TestFindBestMove_RightwardPreference(t *testing.T) {
 	// Define weights: prioritize clearing lines and minimizing height
 	weights := []float64{-1.0, -0.1, -0.1, 0.0, 0.0, 0.0, 0.0, 0.0} // Strongly penalize height
 
-	gotMove := FindBestMove(game, weights)
+	gotMove := FindBestMove(game, weights, nil)
 
 	// An O-tetromino is 2 blocks wide. If column 1 is filled, the leftmost valid XOffset should be 2.
 	expectedXOffset := 2
@@ -92,7 +92,7 @@ func TestFindBestMove_ClearsLine(t *testing.T) {
 		XOffset:   6,
 	}
 
-	gotMove := FindBestMove(game, weights)
+	gotMove := FindBestMove(game, weights, nil)
 
 	if gotMove.Rotation != expectedMove.Rotation || gotMove.XOffset != expectedMove.XOffset {
 		t.Errorf("FindBestMove_ClearsLine() got move {Rotation: %d, XOffset: %d, Score: %f}, want {Rotation: %d, XOffset: %d}",
@@ -121,11 +121,47 @@ func TestFindBestMove_LandingHeight(t *testing.T) {
 		XOffset:  1, // Leftmost valid XOffset
 	}
 
-	gotMove := FindBestMove(game, weights)
+	gotMove := FindBestMove(game, weights, nil)
 
 	if gotMove.Rotation != expectedMove.Rotation || gotMove.XOffset != expectedMove.XOffset {
 		t.Errorf("TestFindBestMove_LandingHeight() got move {Rotation: %d, XOffset: %d, Score: %f}, want {Rotation: %d, XOffset: %d}",
 			gotMove.Rotation, gotMove.XOffset, gotMove.EvaluatedScore, expectedMove.Rotation, expectedMove.XOffset)
+	}
+}
+
+func TestFindBestMove_WeightMask(t *testing.T) {
+	game := engine.NewGame()
+	game.Piece = 0 // I-tetromino
+
+	// With LinesCleared weight active (index 3), the AI should try to clear lines.
+	// With it masked out, it should behave as if that weight is zero.
+	weightsWithLines := []float64{0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0}
+	maskAllOn := []bool{true, true, true, true, true, true, true, true}
+	maskLinesClearedOff := []bool{true, true, true, false, true, true, true, true}
+
+	// Set up board where clearing a line matters
+	for c := 1; c <= game.GameColumns; c++ {
+		if c < 7 {
+			game.Field[18][c] = 1
+		}
+	}
+
+	moveWithLines := FindBestMove(game, weightsWithLines, maskAllOn)
+	moveWithoutLines := FindBestMove(game, weightsWithLines, maskLinesClearedOff)
+
+	// When mask disables LinesCleared, the effective weight is 0, so the move should
+	// be the same as if we passed all-zero weights.
+	allZeroWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+	moveAllZero := FindBestMove(game, allZeroWeights, nil)
+
+	if moveWithoutLines.Rotation != moveAllZero.Rotation || moveWithoutLines.XOffset != moveAllZero.XOffset {
+		t.Errorf("Masked-out LinesCleared weight should produce same move as zero weight. Got {Rot:%d, X:%d}, want {Rot:%d, X:%d}",
+			moveWithoutLines.Rotation, moveWithoutLines.XOffset, moveAllZero.Rotation, moveAllZero.XOffset)
+	}
+
+	// Sanity check: with mask all-on, the move should differ (lines cleared matters)
+	if moveWithLines.Rotation == moveAllZero.Rotation && moveWithLines.XOffset == moveAllZero.XOffset {
+		t.Log("Warning: move with LinesCleared=100 is same as all-zero weights; board setup may not differentiate")
 	}
 }
 

@@ -13,7 +13,8 @@ type Move struct {
 }
 
 // FindBestMove determines the optimal move for the current piece based on the AI's weights.
-func FindBestMove(g *engine.Game, weights []float64) Move {
+// If weightMask is non-nil, any position where weightMask[i] is false forces that weight to have no effect.
+func FindBestMove(g *engine.Game, weights []float64, weightMask []bool) Move {
 	bestMove := Move{EvaluatedScore: -999999999} // Initialize with a very low score
 
 	for rot := 0; rot < 4; rot++ { // rot is the desired final rotation count (0 to 3)
@@ -72,14 +73,25 @@ func FindBestMove(g *engine.Game, weights []float64) Move {
 
 			// Evaluate this finalGame state
 			heuristics := fitter.CalculateHeuristics(finalGame.Field, linesCleared, landingHeight)
-			currentScore := -(weights[0]*float64(heuristics.AggregateHeight) +
-				weights[1]*float64(heuristics.Holes) +
-				weights[2]*float64(heuristics.Bumpiness)) +
-				weights[3]*float64(heuristics.LinesCleared) +
-				weights[4]*float64(heuristics.LandingHeight) +
-				weights[5]*float64(heuristics.Overhangs) +
-				weights[6]*float64(heuristics.ColumnTransitions) +
-				weights[7]*float64(heuristics.RowTransitions)
+
+			effectiveWeights := make([]float64, len(weights))
+			copy(effectiveWeights, weights)
+			if weightMask != nil {
+				for i := range effectiveWeights {
+					if i < len(weightMask) && !weightMask[i] {
+						effectiveWeights[i] = 0
+					}
+				}
+			}
+
+			currentScore := -(effectiveWeights[0]*float64(heuristics.AggregateHeight) +
+				effectiveWeights[1]*float64(heuristics.Holes) +
+				effectiveWeights[2]*float64(heuristics.Bumpiness)) +
+				effectiveWeights[3]*float64(heuristics.LinesCleared) +
+				effectiveWeights[4]*float64(heuristics.LandingHeight) +
+				effectiveWeights[5]*float64(heuristics.Overhangs) +
+				effectiveWeights[6]*float64(heuristics.ColumnTransitions) +
+				effectiveWeights[7]*float64(heuristics.RowTransitions)
 
 			if currentScore > bestMove.EvaluatedScore {
 				bestMove.EvaluatedScore = currentScore

@@ -62,7 +62,7 @@ func printGame(g *engine.Game) {
 
 func main() {
 	// Load the trained model
-	genome, err := loadGenome("trained_model.json")
+	genome, mask, err := loadGenome("trained_model.json")
 	if err != nil {
 		fmt.Printf("Error loading trained model: %v\n", err)
 		os.Exit(1)
@@ -75,7 +75,7 @@ func main() {
 	// Main game loop
 	for game.State != engine.StateGameOver {
 		// Find the best move for the current piece
-		move := player.FindBestMove(game, genome)
+		move := player.FindBestMove(game, genome, mask)
 
 		// Apply the chosen rotation and horizontal position
 		for i := 0; i < move.Rotation; i++ {
@@ -105,16 +105,33 @@ func main() {
 	fmt.Printf("Final Score (Lines): %d\n", game.ScoreLineCount)
 }
 
-func loadGenome(filename string) ([]float64, error) {
+type TrainedModel struct {
+	Weights []float64 `json:"weights"`
+	Mask    string    `json:"mask"`
+}
+
+func loadGenome(filename string) ([]float64, []bool, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	var model TrainedModel
+	if err := json.Unmarshal(data, &model); err == nil && len(model.Weights) > 0 {
+		var mask []bool
+		if model.Mask != "" {
+			mask = make([]bool, len(model.Mask))
+			for i, c := range model.Mask {
+				mask[i] = c == '1'
+			}
+		}
+		return model.Weights, mask, nil
 	}
 
 	var genome []float64
 	if err := json.Unmarshal(data, &genome); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return genome, nil
+	return genome, nil, nil
 }
